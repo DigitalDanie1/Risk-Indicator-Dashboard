@@ -9,55 +9,72 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <style>
-    :root{
-      --bg:#09090b;--panel:#111113;--panel2:#0d1117;--border:#23232a;--text:#e7e7ea;--muted:#8b8b94;--sub:#a1a1aa;
-      --blue:#2563eb;--sky:#38bdf8;--yellow:#eab308;--orange:#f97316;--red:#dc2626;--green:#22c55e;
-      --r:16px;--r2:12px;--shadow:0 10px 30px rgba(0,0,0,.28);
-    }
+    :root{--bg:#09090b;--panel:#111113;--border:#23232a;--text:#e7e7ea;--r:16px;--shadow:0 10px 30px rgba(0,0,0,.28)}
     *{box-sizing:border-box;margin:0;padding:0}
     body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;padding:16px;min-height:100vh}
-    .wrap{max-width:860px;margin:0 auto}.mono{font-family:'JetBrains Mono',monospace}.muted{color:var(--muted)}
-    .tabs{display:flex;gap:6px;background:var(--panel);padding:5px;border-radius:14px;margin-bottom:16px;border:1px solid var(--border);position:sticky;top:12px;z-index:5}
+    .wrap{max-width:860px;margin:0 auto}
+    .mono{font-family:'JetBrains Mono',monospace}
+    .tabs{display:flex;gap:6px;background:#111113;padding:5px;border-radius:14px;margin-bottom:16px;border:1px solid #23232a;position:sticky;top:12px;z-index:5}
     .tab-btn{flex:1;border:none;background:transparent;color:#6b7280;border-radius:10px;padding:10px 8px;font-size:11px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace}
-    .tab-btn.active{background:#1b1b21;color:#fff}.tab-panel{display:none}.tab-panel.active{display:block}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--shadow)}
-    .hero{border-radius:24px;padding:22px;color:#fff;margin-bottom:12px}.section-title{font-size:11px;letter-spacing:2px;color:#6b7280;margin-bottom:10px;font-family:'JetBrains Mono',monospace}
-    .row{display:flex;align-items:center;justify-content:space-between;gap:10px}.grid{display:grid;gap:12px}.two{grid-template-columns:1fr 1fr}
-    .score-row{display:flex;gap:14px;align-items:flex-end;margin-top:8px}.score{font-size:68px;line-height:.9;font-weight:800;letter-spacing:-2px}.regime{font-size:18px;font-weight:700;letter-spacing:1px}
-    .bar{height:8px;border-radius:999px;background:rgba(0,0,0,.25);overflow:hidden;margin-top:14px}.bar>div{height:100%;background:rgba(255,255,255,.76)}
+    .tab-btn.active{background:#1b1b21;color:#fff}
+    .tab-panel{display:none}
+    .tab-panel.active{display:block}
+    .card{background:#111113;border:1px solid #23232a;border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+    .hero{border-radius:24px;padding:22px;color:#fff;margin-bottom:12px}
+    .section-title{font-size:11px;letter-spacing:2px;color:#6b7280;margin-bottom:10px;font-family:'JetBrains Mono',monospace}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .grid{display:grid;gap:12px}
+    .two{grid-template-columns:1fr 1fr}
+    .score-row{display:flex;gap:14px;align-items:flex-end;margin-top:8px}
+    .score{font-size:68px;line-height:.9;font-weight:800;letter-spacing:-2px}
+    .regime{font-size:18px;font-weight:700;letter-spacing:1px}
+    .bar{height:8px;border-radius:999px;background:rgba(0,0,0,.25);overflow:hidden;margin-top:14px}
+    .bar>div{height:100%;background:rgba(255,255,255,.76)}
     .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;border:1px solid transparent}
-    .ok{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.18)}.warn{background:rgba(249,115,22,.12);color:#fdba74;border-color:rgba(249,115,22,.18)}.bad{background:rgba(220,38,38,.12);color:#fca5a5;border-color:rgba(220,38,38,.18)}.info{background:rgba(59,130,246,.12);color:#93c5fd;border-color:rgba(59,130,246,.18)}
+    .ok{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.18)}
+    .warn{background:rgba(249,115,22,.12);color:#fdba74;border-color:rgba(249,115,22,.18)}
+    .bad{background:rgba(220,38,38,.12);color:#fca5a5;border-color:rgba(220,38,38,.18)}
+    .info{background:rgba(59,130,246,.12);color:#93c5fd;border-color:rgba(59,130,246,.18)}
     .btn{border:1px solid #31313a;background:#17171c;color:#d4d4d8;border-radius:10px;padding:8px 12px;cursor:pointer;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace}
-    .btn.ghost{background:transparent;color:#a1a1aa}
-    .action-item,.driver-item,.indicator-row,.analog-row,.snap-row{background:#0b0b0e;border:1px solid #1a1a20;border-radius:12px;padding:12px}
+    .action-item,.indicator-row,.analog-row,.note{background:#0b0b0e;border:1px solid #1a1a20;border-radius:12px;padding:12px}
     .indicator-row{display:grid;grid-template-columns:24px 120px 1fr auto;gap:10px;align-items:center;margin-bottom:8px}
-    .indicator-name{font-size:14px;font-weight:600}.indicator-meta{font-size:10px;color:#64646f;font-family:'JetBrains Mono',monospace}.indicator-value{font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace}
-    .indicator-line{height:8px;border-radius:999px;background:#17171c;overflow:hidden}.indicator-line>div{height:100%}.indicator-action{margin-top:6px;font-size:11px;color:#9ca3af}
+    .indicator-name{font-size:14px;font-weight:600}
+    .indicator-meta{font-size:10px;color:#64646f;font-family:'JetBrains Mono',monospace}
+    .indicator-value{font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace}
+    .indicator-line{height:8px;border-radius:999px;background:#17171c;overflow:hidden}
+    .indicator-line>div{height:100%}
+    .indicator-action{margin-top:6px;font-size:11px;color:#9ca3af}
     .badge{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:4px 8px;border-radius:7px;white-space:nowrap}
-    .mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.mini{text-align:center;background:#111115;border-radius:10px;padding:10px 8px}.mini .t{font-size:10px;color:#6b7280;font-family:'JetBrains Mono',monospace}.mini .v{font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace;margin-top:4px}
-    .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.tag{font-size:10px;border-radius:6px;padding:4px 7px;font-family:'JetBrains Mono',monospace}
-    .chart-wrap{height:290px}.footer{margin:18px 0 6px;text-align:center;font-size:10px;color:#444;font-family:'JetBrains Mono',monospace;letter-spacing:1px}.empty{padding:24px;text-align:center;color:#8f8f99;background:#0d0d11;border:1px dashed #262631;border-radius:14px}
+    .mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+    .mini{text-align:center;background:#111115;border-radius:10px;padding:10px 8px}
+    .mini .t{font-size:10px;color:#6b7280;font-family:'JetBrains Mono',monospace}
+    .mini .v{font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace;margin-top:4px}
+    .empty{padding:24px;text-align:center;color:#8f8f99;background:#0d0d11;border:1px dashed #262631;border-radius:14px}
     .status-banner{margin-bottom:12px;padding:10px 12px;border-radius:12px;border:1px solid #2a2f3a;background:#0c1017;font-size:12px;color:#aab4c3}
+    .footer{margin:18px 0 6px;text-align:center;font-size:10px;color:#cbd5e1;background:#0b1220;border:1px solid #1e293b;border-radius:10px;padding:10px 12px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;opacity:.95}
+    .chart-wrap{height:280px}
     @media (max-width:700px){.two{grid-template-columns:1fr}.indicator-row{grid-template-columns:24px 1fr auto}.indicator-row .indicator-bar-wrap{grid-column:2/4}.score{font-size:54px}.hero{padding:18px}}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="dash">🌡️ Dashboard</button>
-      <button class="tab-btn" data-tab="history">📜 History</button>
-      <button class="tab-btn" data-tab="charts">📊 Charts</button>
-      <button class="tab-btn" data-tab="notes">🧩 Notes</button>
-    </div>
-    <div id="app-status"></div>
-    <section id="tab-dash" class="tab-panel active"></section>
-    <section id="tab-history" class="tab-panel"></section>
-    <section id="tab-charts" class="tab-panel"></section>
-    <section id="tab-notes" class="tab-panel"></section>
-    <div class="footer">NOT FINANCIAL ADVICE · API-PROXIED VERSION</div>
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="dash">🌡️ Dashboard</button>
+    <button class="tab-btn" data-tab="history">📜 History</button>
+    <button class="tab-btn" data-tab="charts">📊 Charts</button>
+    <button class="tab-btn" data-tab="notes">🧩 Notes</button>
   </div>
+
+  <div id="app-status"></div>
+  <section id="tab-dash" class="tab-panel active"></section>
+  <section id="tab-history" class="tab-panel"></section>
+  <section id="tab-charts" class="tab-panel"></section>
+  <section id="tab-notes" class="tab-panel"></section>
+  <div class="footer">AUTO-UPDATING · FALLBACK SAFE · NOT FINANCIAL ADVICE</div>
+</div>
+
 <script>
-const INDICATORS=[
+const INDICATORS = [
   {id:'fearGreed',name:'Fear & Greed',icon:'🧠',unit:'',min:0,max:100,inverse:false,thresholds:[{mx:20,label:'Extreme Fear',score:5,color:'cold',action:'역발상 매수 구간.'},{mx:40,label:'Fear',score:25,color:'cool',action:'분할매수 우호적.'},{mx:60,label:'Neutral',score:50,color:'neutral',action:'기존 전략 유지.'},{mx:80,label:'Greed',score:75,color:'warm',action:'신규 추격매수 자제.'},{mx:1e9,label:'Extreme Greed',score:95,color:'hot',action:'이익실현·현금확대.'}]},
   {id:'vix',name:'VIX',icon:'⚡',unit:'',min:10,max:85,inverse:true,thresholds:[{mx:12,label:'Complacent',score:85,color:'hot',action:'헤지 점검.'},{mx:18,label:'Calm',score:65,color:'warm',action:'과열 경계.'},{mx:25,label:'Cautious',score:40,color:'neutral',action:'중립 유지.'},{mx:35,label:'Fearful',score:20,color:'cool',action:'워치리스트 매수.'},{mx:1e9,label:'Panic',score:5,color:'cold',action:'패닉은 기회가 될 수 있음.'}]},
   {id:'rsi',name:'RSI 14d',icon:'🔄',unit:'',min:15,max:85,inverse:false,thresholds:[{mx:25,label:'Very Oversold',score:5,color:'cold',action:'기술적 반등 가능.'},{mx:35,label:'Oversold',score:20,color:'cool',action:'매수 준비.'},{mx:65,label:'Neutral',score:50,color:'neutral',action:'추세 확인.'},{mx:75,label:'Overbought',score:75,color:'warm',action:'추격매수 자제.'},{mx:1e9,label:'Very Overbought',score:95,color:'hot',action:'부분 익절 고려.'}]},
@@ -65,46 +82,326 @@ const INDICATORS=[
   {id:'putCall',name:'Put/Call',icon:'🧮',unit:'',min:0.5,max:1.3,inverse:true,thresholds:[{mx:0.6,label:'Call Heavy',score:90,color:'hot',action:'옵션 낙관 과열.'},{mx:0.8,label:'Bullish',score:70,color:'warm',action:'과열 가능성 점검.'},{mx:1.0,label:'Neutral',score:50,color:'neutral',action:'중립.'},{mx:1.15,label:'Fear',score:25,color:'cool',action:'공포 상승.'},{mx:1e9,label:'Panic Hedging',score:8,color:'cold',action:'극단 공포 가능성.'}]},
   {id:'breadth',name:'% Above 50d',icon:'🫀',unit:'%',min:5,max:95,inverse:false,thresholds:[{mx:20,label:'Washed Out',score:5,color:'cold',action:'광범위 과매도.'},{mx:35,label:'Weak Breadth',score:20,color:'cool',action:'추가 확인 필요.'},{mx:65,label:'Balanced',score:50,color:'neutral',action:'중립 breadth.'},{mx:80,label:'Strong',score:75,color:'warm',action:'강한 확산.'},{mx:1e9,label:'Overextended',score:95,color:'hot',action:'breadth 과열 경계.'}]}
 ];
-const PRESETS=[
-{id:'dc02',n:'Dot-Com Bottom',d:'Oct 2002',e:'💀',desc:'Deep tech washout',c:'#2563eb',af:{m3:'+8%',m6:'+14%',y1:'+24%',n:'극단 공포 이후 회복.'},v:{fearGreed:10,vix:40,rsi:22,maDist:-30,putCall:1.10,breadth:18}},
-{id:'gfc08',n:'GFC Crash',d:'Nov 2008',e:'📉',desc:'Lehman aftermath',c:'#1e40af',af:{m3:'-25%',m6:'+1%',y1:'+23%',n:'추가 하락 후 회복.'},v:{fearGreed:5,vix:80,rsi:18,maDist:-38,putCall:1.20,breadth:10}},
-{id:'gfc09',n:'GFC Bottom',d:'Mar 2009',e:'🕳️',desc:'Major low',c:'#2563eb',af:{m3:'+36%',m6:'+51%',y1:'+68%',n:'강력한 반등 출발점.'},v:{fearGreed:8,vix:50,rsi:20,maDist:-35,putCall:1.08,breadth:15}},
-{id:'cv20',n:'COVID Crash',d:'Mar 2020',e:'🦠',desc:'Pandemic liquidation',c:'#1e40af',af:{m3:'+30%',m6:'+46%',y1:'+75%',n:'급락 뒤 급반등.'},v:{fearGreed:2,vix:82,rsi:16,maDist:-30,putCall:1.05,breadth:12}},
-{id:'cv21',n:'Post-COVID Mania',d:'Dec 2021',e:'🚀',desc:'Speculative peak',c:'#ef4444',af:{m3:'-8%',m6:'-20%',y1:'-19%',n:'탐욕 과열 이후 리셋.'},v:{fearGreed:82,vix:17,rsi:70,maDist:12,putCall:0.62,breadth:88}},
-{id:'br22',n:'2022 Bear Low',d:'Oct 2022',e:'🐻',desc:'Rate-shock bear low',c:'#38bdf8',af:{m3:'+8%',m6:'+15%',y1:'+21%',n:'깊은 공포 뒤 반등.'},v:{fearGreed:15,vix:33,rsi:28,maDist:-15,putCall:0.98,breadth:28}},
-{id:'tf25',n:'Tariff Shock',d:'Apr 2025',e:'💣',desc:'Tariff-driven volatility',c:'#38bdf8',af:{m3:'TBD',m6:'TBD',y1:'TBD',n:'진행 중 시나리오.'},v:{fearGreed:4,vix:52,rsi:30,maDist:-10,putCall:1.12,breadth:22}}
+
+const FALLBACKS = { fearGreed:50, vix:20, rsi:50, maDist:0, putCall:0.90, breadth:50 };
+const ENDPOINTS = {
+  fearGreed:'/api/fear-greed',
+  vix:'/api/vix',
+  rsi:'/api/rsi',
+  maDist:'/api/ma-distance',
+  putCall:'/api/put-call',
+  breadth:'/api/breadth'
+};
+
+const PRESETS = [
+  {id:'dc02',n:'Dot-Com Bottom',d:'Oct 2002',e:'💀',desc:'Deep tech washout',c:'#2563eb',af:{m3:'+8%',m6:'+14%',y1:'+24%',n:'극단 공포 이후 회복.'},v:{fearGreed:10,vix:40,rsi:22,maDist:-30,putCall:1.10,breadth:18}},
+  {id:'gfc08',n:'GFC Crash',d:'Nov 2008',e:'📉',desc:'Lehman aftermath',c:'#1e40af',af:{m3:'-25%',m6:'+1%',y1:'+23%',n:'추가 하락 후 회복.'},v:{fearGreed:5,vix:80,rsi:18,maDist:-38,putCall:1.20,breadth:10}},
+  {id:'gfc09',n:'GFC Bottom',d:'Mar 2009',e:'🕳️',desc:'Major low',c:'#2563eb',af:{m3:'+36%',m6:'+51%',y1:'+68%',n:'강력한 반등 출발점.'},v:{fearGreed:8,vix:50,rsi:20,maDist:-35,putCall:1.08,breadth:15}},
+  {id:'cv20',n:'COVID Crash',d:'Mar 2020',e:'🦠',desc:'Pandemic liquidation',c:'#1e40af',af:{m3:'+30%',m6:'+46%',y1:'+75%',n:'급락 뒤 급반등.'},v:{fearGreed:2,vix:82,rsi:16,maDist:-30,putCall:1.05,breadth:12}},
+  {id:'cv21',n:'Post-COVID Mania',d:'Dec 2021',e:'🚀',desc:'Speculative peak',c:'#ef4444',af:{m3:'-8%',m6:'-20%',y1:'-19%',n:'탐욕 과열 이후 리셋.'},v:{fearGreed:82,vix:17,rsi:70,maDist:12,putCall:0.62,breadth:88}},
+  {id:'br22',n:'2022 Bear Low',d:'Oct 2022',e:'🐻',desc:'Rate-shock bear low',c:'#38bdf8',af:{m3:'+8%',m6:'+15%',y1:'+21%',n:'깊은 공포 뒤 반등.'},v:{fearGreed:15,vix:33,rsi:28,maDist:-15,putCall:0.98,breadth:28}}
 ];
-const PLAYBOOK=[
-{min:0,max:15,label:'EXTREME FEAR',emoji:'💎',color:'#2563eb',actions:['현금에서 우량주로 점진 전환.','한 번에 말고 3~5회 분할매수.','지표 정상화 전까지 레버리지는 자제.']},
-{min:15,max:35,label:'OVERSOLD',emoji:'🔍',color:'#38bdf8',actions:['워치리스트 중심으로 선별 매수.','breadth 개선 여부 확인.','반등 시 추격보다 눌림 대기.']},
-{min:35,max:65,label:'NEUTRAL',emoji:'⚖️',color:'#eab308',actions:['기존 포지션 유지.','새 포지션은 기대값 높은 것만.','현금 비중 10~20% 유지.']},
-{min:65,max:85,label:'OVERHEATED',emoji:'🔥',color:'#f97316',actions:['수익 일부 실현.','고베타 비중 축소.','트레일링 스탑 점검.']},
-{min:85,max:101,label:'EXTREME GREED',emoji:'🚨',color:'#dc2626',actions:['과감한 디리스크.','옵션/헤지 검토.','FOMO 추격매수 금지.']}
+
+const PLAYBOOK = [
+  {min:0,max:15,actions:['현금에서 우량주로 점진 전환.','3~5회 분할매수.','레버리지는 자제.']},
+  {min:15,max:35,actions:['선별 매수.','breadth 개선 확인.','추격보다 눌림 대기.']},
+  {min:35,max:65,actions:['기존 포지션 유지.','기대값 높은 것만 진입.','현금 10~20% 유지.']},
+  {min:65,max:85,actions:['수익 일부 실현.','고베타 비중 축소.','트레일링 스탑 점검.']},
+  {min:85,max:101,actions:['디리스크.','헤지 검토.','FOMO 금지.']}
 ];
-const COLORS={hot:{bg:'#dc2626',tx:'#fff'},warm:{bg:'#f97316',tx:'#fff'},neutral:{bg:'#eab308',tx:'#111'},cool:{bg:'#38bdf8',tx:'#fff'},cold:{bg:'#2563eb',tx:'#fff'}};
-const state={tab:'dash',values:Object.fromEntries(INDICATORS.map(i=>[i.id,null])),timestamps:{},status:Object.fromEntries(INDICATORS.map(i=>[i.id,'idle'])),errors:{},lastUpdated:null,loading:false,charts:{},expanded:null};
-function clamp(n,min,max){return Math.max(min,Math.min(max,n));}
-function fmt(v,u=''){if(v==null||Number.isNaN(v))return '—';return `${Number.isInteger(v)?v:v.toFixed(2)}${u}`}
+
+const COLORS = {
+  hot:{bg:'#dc2626',tx:'#fff'},
+  warm:{bg:'#f97316',tx:'#fff'},
+  neutral:{bg:'#eab308',tx:'#111'},
+  cool:{bg:'#38bdf8',tx:'#fff'},
+  cold:{bg:'#2563eb',tx:'#fff'}
+};
+
+const state = {
+  tab:'dash',
+  values:Object.fromEntries(INDICATORS.map(i=>[i.id,null])),
+  timestamps:{},
+  status:Object.fromEntries(INDICATORS.map(i=>[i.id,'idle'])),
+  errors:{},
+  sources:{},
+  staleFlags:{},
+  lastUpdated:null,
+  loading:false,
+  charts:{}
+};
+
+function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
+function fmt(v,u=''){if(v==null||Number.isNaN(v))return '—';const n=Number(v);return `${Number.isInteger(n)?n:n.toFixed(2)}${u}`}
 function fmtDate(d){if(!d)return '—';return new Date(d).toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}
 function getThreshold(ind,val){if(val==null||Number.isNaN(val))return null;for(const t of ind.thresholds)if(val<=t.mx)return t;return ind.thresholds.at(-1)}
 function normalizedRaw(ind,val){if(val==null||Number.isNaN(val))return null;const scaled=((val-ind.min)/(ind.max-ind.min))*100;const c=clamp(scaled,0,100);return ind.inverse?100-c:c}
 function normalizedBucket(ind,val){const th=getThreshold(ind,val);return th?th.score:null}
 function composite(values){const arr=INDICATORS.map(ind=>normalizedBucket(ind,values[ind.id])).filter(v=>v!=null);if(!arr.length)return null;return arr.reduce((a,b)=>a+b,0)/arr.length}
-function regime(score){if(score==null)return{label:'NO DATA',view:'Waiting for live inputs',grad:'linear-gradient(135deg,#27272a,#3f3f46)',glow:'none'};if(score<=15)return{label:'EXTREME FEAR',view:'공포 극대화 — 매수 준비 구간',grad:'linear-gradient(135deg,#1e40af,#2563eb,#3b82f6)',glow:'0 0 60px rgba(37,99,235,.4)'};if(score<=35)return{label:'OVERSOLD',view:'공포 우세 — 분할매수 관찰',grad:'linear-gradient(135deg,#0369a1,#38bdf8,#67e8f9)',glow:'0 0 40px rgba(56,189,248,.35)'};if(score<=65)return{label:'NEUTRAL',view:'중립 — 프로세스 유지',grad:'linear-gradient(135deg,#a16207,#eab308,#fcd34d)',glow:'0 0 40px rgba(234,179,8,.35)'};if(score<=85)return{label:'OVERHEATED',view:'과열 — 차익실현 구간',grad:'linear-gradient(135deg,#c2410c,#f97316,#fdba74)',glow:'0 0 40px rgba(249,115,22,.35)'};return{label:'EXTREME GREED',view:'탐욕 극단 — 디리스크',grad:'linear-gradient(135deg,#991b1b,#dc2626,#f87171)',glow:'0 0 60px rgba(220,38,38,.45)'}}
+
+function regime(score){
+  if(score==null)return{label:'NO DATA',view:'Waiting for live inputs',grad:'linear-gradient(135deg,#27272a,#3f3f46)',glow:'none'};
+  if(score<=15)return{label:'EXTREME FEAR',view:'공포 극대화 — 매수 준비 구간',grad:'linear-gradient(135deg,#1e40af,#2563eb,#3b82f6)',glow:'0 0 60px rgba(37,99,235,.4)'};
+  if(score<=35)return{label:'OVERSOLD',view:'공포 우세 — 분할매수 관찰',grad:'linear-gradient(135deg,#0369a1,#38bdf8,#67e8f9)',glow:'0 0 40px rgba(56,189,248,.35)'};
+  if(score<=65)return{label:'NEUTRAL',view:'중립 — 프로세스 유지',grad:'linear-gradient(135deg,#a16207,#eab308,#fcd34d)',glow:'0 0 40px rgba(234,179,8,.35)'};
+  if(score<=85)return{label:'OVERHEATED',view:'과열 — 차익실현 구간',grad:'linear-gradient(135deg,#c2410c,#f97316,#fdba74)',glow:'0 0 40px rgba(249,115,22,.35)'};
+  return{label:'EXTREME GREED',view:'탐욕 극단 — 디리스크',grad:'linear-gradient(135deg,#991b1b,#dc2626,#f87171)',glow:'0 0 60px rgba(220,38,38,.45)'};
+}
+
 function getPlaybook(score){return PLAYBOOK.find(p=>score>=p.min&&score<p.max)||PLAYBOOK.at(-1)}
 function cosineSimilarity(a,b){let dot=0,ma=0,mb=0;for(const ind of INDICATORS){const va=normalizedRaw(ind,a[ind.id]),vb=normalizedRaw(ind,b[ind.id]);if(va==null||vb==null)continue;dot+=va*vb;ma+=va*va;mb+=vb*vb}return ma&&mb?dot/(Math.sqrt(ma)*Math.sqrt(mb)):0}
-function topAnalogs(values,limit=3){return PRESETS.map(p=>({...p,sim:cosineSimilarity(values,p.v)})).sort((a,b)=>b.sim-a.sim).slice(0,limit)}
-function scoreColor(score){if(score==null)return '#71717a';if(score<=15)return '#2563eb';if(score<=35)return '#38bdf8';if(score<=65)return '#eab308';if(score<=85)return '#f97316';return '#dc2626'}
-async function fetchAll(){state.loading=true;renderStatus();const endpoints={fearGreed:'/api/fear-greed',vix:'/api/vix',rsi:'/api/rsi',maDist:'/api/ma-distance',putCall:'/api/put-call',breadth:'/api/breadth'};await Promise.allSettled(Object.entries(endpoints).map(async([id,url])=>{state.status[id]='loading';try{const r=await fetch(url);if(!r.ok)throw new Error(`HTTP ${r.status}`);const d=await r.json();state.values[id]=d.value;state.timestamps[id]=d.updatedAt||new Date().toISOString();state.status[id]='ok';state.errors[id]=null}catch(e){state.status[id]='error';state.errors[id]=e.message||'failed'}}));state.loading=false;state.lastUpdated=new Date().toISOString();renderAll();if(state.tab==='charts')renderCharts()}
-function bindTabs(){document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{state.tab=btn.dataset.tab;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b===btn));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById('tab-'+state.tab).classList.add('active');renderAll();if(state.tab==='charts')setTimeout(renderCharts,30)}))}
-function renderStatus(){const okCount=Object.values(state.status).filter(v=>v==='ok').length;const errCount=Object.values(state.status).filter(v=>v==='error').length;document.getElementById('app-status').innerHTML=`<div class="status-banner"><div class="row" style="flex-wrap:wrap;gap:8px"><div style="display:flex;gap:8px;flex-wrap:wrap"><span class="pill ${state.loading?'warn':'ok'}">${state.loading?'Refreshing…':'Ready'}</span><span class="pill info">${okCount}/${INDICATORS.length} live</span>${errCount?`<span class="pill bad">${errCount} failed</span>`:''}</div><div class="mono" style="font-size:11px;color:#94a3b8">Updated: ${fmtDate(state.lastUpdated)}</div></div></div>`}
-function renderIndicatorRow(ind){const val=state.values[ind.id],th=getThreshold(ind,val),c=th?COLORS[th.color]:{bg:'#3f3f46',tx:'#fff'},norm=normalizedRaw(ind,val),stat=state.status[ind.id],stamp=state.timestamps[ind.id]?fmtDate(state.timestamps[ind.id]):'—';const meta=stat==='ok'?`✓ ${stamp}`:stat==='loading'?'Refreshing…':stat==='error'?`Error: ${state.errors[ind.id]||'failed'}`:'Waiting';return `<div class="indicator-row"><div class="mono" style="font-size:14px">${ind.icon}</div><div><div class="indicator-name">${ind.name}</div><div class="indicator-meta">${meta}</div></div><div class="badge" style="background:${c.bg};color:${c.tx}">${th?th.label:'Unavailable'}</div><div class="indicator-value">${fmt(val,ind.unit)}</div><div class="indicator-bar-wrap" style="grid-column:2/5"><div class="indicator-line"><div style="width:${norm==null?0:norm}%;background:${th?c.bg:'#52525b'}"></div></div><div class="indicator-action">${th?'→ '+th.action:'이 입력값을 불러오지 못했습니다.'}</div></div></div>`}
-function renderDashboard(){const score=composite(state.values),rg=regime(score),pb=getPlaybook(score||50),analog=topAnalogs(state.values,1)[0];document.getElementById('tab-dash').innerHTML=`<div class="hero" style="background:${rg.grad};box-shadow:${rg.glow}"><div class="row" style="align-items:flex-start"><div><div class="mono" style="font-size:11px;letter-spacing:3px;opacity:.82">${state.lastUpdated?`LIVE · ${fmtDate(state.lastUpdated)}`:'WAITING FOR DATA'}</div><div class="score-row"><div class="score">${score==null?'—':Math.round(score)}</div><div><div class="regime">${rg.label}</div><div class="mono" style="font-size:12px;opacity:.9;margin-top:4px">6 INDICATORS</div></div></div><div style="margin-top:10px;font-size:14px;opacity:.95">→ ${rg.view}</div></div><div><button class="btn" id="refreshBtn">${state.loading?'⏳ Refreshing':'🔄 Refresh'}</button></div></div><div class="bar"><div style="width:${score==null?0:score}%"></div></div><div class="row mono" style="margin-top:6px;font-size:10px;opacity:.7"><span>🥶 OVERSOLD</span><span>🔥 OVERHEATED</span></div></div><div class="grid two"><div class="card"><div class="section-title">ACTION PLAYBOOK</div>${pb.actions.map(a=>`<div class="action-item" style="margin-bottom:8px"><div class="mono" style="font-size:11px;color:#d4d4d8">→ ${a}</div></div>`).join('')}</div><div class="card"><div class="section-title">BEST ANALOG</div>${analog&&analog.sim>0?`<div class="analog-row"><div class="row" style="align-items:flex-start"><div><div style="font-size:18px;font-weight:800">${analog.e} ${analog.n}</div><div class="mono" style="font-size:11px;color:#6b7280;margin-top:4px">${analog.d} · ${analog.desc}</div></div><div class="mono" style="font-size:18px;font-weight:800;color:${analog.sim>.8?'#fca5a5':analog.sim>.65?'#fde68a':'#93c5fd'}">${Math.round(analog.sim*100)}%</div></div><div class="mini-grid"><div class="mini"><div class="t">3M</div><div class="v">${analog.af.m3}</div></div><div class="mini"><div class="t">6M</div><div class="v">${analog.af.m6}</div></div><div class="mini"><div class="t">1Y</div><div class="v">${analog.af.y1}</div></div></div><div class="mono" style="font-size:11px;color:#9ca3af;margin-top:10px">${analog.af.n}</div></div>`:'<div class="empty">Not enough live data.</div>'}</div></div><div class="card" style="margin-top:12px"><div class="row" style="margin-bottom:10px"><div class="section-title" style="margin-bottom:0">LIVE INDICATORS</div></div>${INDICATORS.map(renderIndicatorRow).join('')}</div>`;document.getElementById('refreshBtn').addEventListener('click',fetchAll)}
-function renderHistory(){document.getElementById('tab-history').innerHTML=`<div class="card"><div class="section-title">HISTORICAL SCENARIOS</div>${PRESETS.map(p=>{const sc=composite(p.v),sim=cosineSimilarity(state.values,p.v),open=state.expanded===p.id;return `<div class="analog-row" style="margin-bottom:10px"><div class="row" style="align-items:flex-start"><div><div style="font-size:16px;font-weight:800">${p.e} ${p.n}</div><div class="mono" style="font-size:11px;color:#6b7280;margin-top:4px">${p.d} · ${p.desc}</div></div><div style="text-align:right"><div class="mono" style="font-size:18px;font-weight:800;color:${scoreColor(sc)}">${Math.round(sc)}</div><div class="mono" style="font-size:11px;color:${sim>.8?'#fca5a5':sim>.65?'#fde68a':'#93c5fd'}">${Math.round(sim*100)}%</div></div></div><div class="bar" style="margin-top:10px"><div style="width:${sc}%;background:${scoreColor(sc)}"></div></div><div style="margin-top:10px"><button class="btn ghost preset-toggle" data-id="${p.id}">${open?'Hide details':'Show details'}</button></div>${open?`<div class="mini-grid"><div class="mini"><div class="t">3M</div><div class="v">${p.af.m3}</div></div><div class="mini"><div class="t">6M</div><div class="v">${p.af.m6}</div></div><div class="mini"><div class="t">1Y</div><div class="v">${p.af.y1}</div></div></div><div class="mono" style="font-size:11px;color:#9ca3af;margin-top:10px">${p.af.n}</div><div class="tags">${INDICATORS.map(ind=>{const th=getThreshold(ind,p.v[ind.id]);const c=th?COLORS[th.color]:{bg:'#3f3f46',tx:'#fff'};return `<span class="tag" style="background:${c.bg};color:${c.tx}">${ind.icon} ${fmt(p.v[ind.id],ind.unit)}</span>`}).join('')}</div>`:''}</div>`}).join('')}</div>`;document.querySelectorAll('.preset-toggle').forEach(b=>b.addEventListener('click',()=>{state.expanded=state.expanded===b.dataset.id?null:b.dataset.id;renderHistory()}))}
-function renderCharts(){const analog=topAnalogs(state.values,1)[0];document.getElementById('tab-charts').innerHTML=`<div class="grid"><div class="card"><div class="section-title">CURRENT VS CLOSEST ANALOG</div><div class="chart-wrap"><canvas id="barCompare"></canvas></div></div></div>`;Object.values(state.charts).forEach(c=>{try{c.destroy()}catch{}});const labels=INDICATORS.map(i=>i.name),cur=INDICATORS.map(i=>normalizedRaw(i,state.values[i.id])??null),ana=analog?INDICATORS.map(i=>normalizedRaw(i,analog.v[i.id])??null):[];state.charts.bar=new Chart(document.getElementById('barCompare'),{type:'bar',data:{labels,datasets:[{label:'Current',data:cur,backgroundColor:'#22c55e',borderRadius:6},...(analog?[{label:`${analog.n} (${analog.d})`,data:ana,backgroundColor:analog.c+'cc',borderRadius:6}]:[])]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9ca3af',font:{family:'JetBrains Mono',size:10}}}},scales:{x:{min:0,max:100,grid:{color:'#1f1f25'},ticks:{color:'#6b7280',font:{family:'JetBrains Mono',size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{family:'JetBrains Mono',size:10}}}}}})}
-function renderNotes(){document.getElementById('tab-notes').innerHTML=`<div class="card"><div class="section-title">API NOTES</div><div class="action-item" style="margin-bottom:8px"><div class="mono" style="font-size:11px;color:#cbd5e1">/api/fear-greed → CNN sentiment proxy</div></div><div class="action-item" style="margin-bottom:8px"><div class="mono" style="font-size:11px;color:#cbd5e1">/api/vix, /api/rsi, /api/ma-distance → Yahoo chart data via server proxy</div></div><div class="action-item" style="margin-bottom:8px"><div class="mono" style="font-size:11px;color:#cbd5e1">/api/put-call → fallback heuristic if upstream unavailable</div></div><div class="action-item"><div class="mono" style="font-size:11px;color:#cbd5e1">/api/breadth → breadth proxy computed from SPY / RSP / QQQ trend blend</div></div></div>`}
-function renderAll(){renderStatus();renderDashboard();renderHistory();renderNotes();if(state.tab==='charts')renderCharts()}
-bindTabs();renderAll();fetchAll();setInterval(fetchAll,300000)
+function topAnalogs(values){return PRESETS.map(p=>({...p,sim:cosineSimilarity(values,p.v)})).sort((a,b)=>b.sim-a.sim).slice(0,1)}
+function indicatorMeta(id){const stat=state.status[id],stamp=state.timestamps[id]?fmtDate(state.timestamps[id]):'—';if(stat==='ok')return `✓ ${stamp}`;if(stat==='stale')return `⚠ stale · ${stamp}`;if(stat==='fallback')return `≈ fallback · ${stamp}`;if(stat==='loading')return 'Refreshing…';return 'Waiting'}
+
+async function fetchAll(){
+  state.loading=true;
+  renderStatus();
+
+  await Promise.allSettled(
+    Object.entries(ENDPOINTS).map(async([id,url])=>{
+      state.status[id]='loading';
+      try{
+        const res=await fetch(url,{cache:'no-store'});
+        if(!res.ok)throw new Error(`HTTP ${res.status}`);
+        const data=await res.json();
+        const value=Number(data.value);
+        if(Number.isNaN(value))throw new Error('Invalid value');
+
+        state.values[id]=value;
+        state.timestamps[id]=data.updatedAt||new Date().toISOString();
+        state.sources[id]=data.source||'api';
+        state.staleFlags[id]=!!data.stale;
+        state.status[id]=data.stale?'stale':'ok';
+        state.errors[id]=null;
+      }catch(err){
+        const oldValue=state.values[id];
+        state.values[id]=oldValue??FALLBACKS[id];
+        state.timestamps[id]=state.timestamps[id]||new Date().toISOString();
+        state.sources[id]=oldValue!=null?'cached-local':'hardcoded-fallback';
+        state.staleFlags[id]=true;
+        state.status[id]=oldValue!=null?'stale':'fallback';
+        state.errors[id]=err.message||'fetch failed';
+      }
+    })
+  );
+
+  state.loading=false;
+  state.lastUpdated=new Date().toISOString();
+  renderAll();
+  if(state.tab==='charts') renderCharts();
+}
+
+function bindTabs(){
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    state.tab=btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b===btn));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('tab-'+state.tab).classList.add('active');
+    renderAll();
+    if(state.tab==='charts') setTimeout(renderCharts,30);
+  }));
+}
+
+function renderStatus(){
+  const okCount=Object.values(state.status).filter(v=>v==='ok').length;
+  const staleCount=Object.values(state.status).filter(v=>v==='stale').length;
+  const fbCount=Object.values(state.status).filter(v=>v==='fallback').length;
+
+  document.getElementById('app-status').innerHTML=`<div class="status-banner"><div class="row" style="flex-wrap:wrap;gap:8px"><div style="display:flex;gap:8px;flex-wrap:wrap"><span class="pill ${state.loading?'warn':'ok'}">${state.loading?'Refreshing…':'Auto update on'}</span><span class="pill info">${okCount}/${INDICATORS.length} live</span>${staleCount?`<span class="pill warn">${staleCount} stale</span>`:''}${fbCount?`<span class="pill bad">${fbCount} fallback</span>`:''}</div><div class="mono" style="font-size:11px;color:#94a3b8">Updated: ${fmtDate(state.lastUpdated)}</div></div></div>`;
+}
+
+function renderIndicatorRow(ind){
+  const val=state.values[ind.id],th=getThreshold(ind,val),c=th?COLORS[th.color]:{bg:'#3f3f46',tx:'#fff'},norm=normalizedRaw(ind,val),meta=indicatorMeta(ind.id),src=state.sources[ind.id]||'—';
+  return `<div class="indicator-row"><div class="mono" style="font-size:14px">${ind.icon}</div><div><div class="indicator-name">${ind.name}</div><div class="indicator-meta">${meta}</div></div><div class="badge" style="background:${c.bg};color:${c.tx}">${th?th.label:'Unavailable'}</div><div class="indicator-value">${fmt(val,ind.unit)}</div><div class="indicator-bar-wrap" style="grid-column:2/5"><div class="indicator-line"><div style="width:${norm==null?0:norm}%;background:${th?c.bg:'#52525b'}"></div></div><div class="indicator-action">${th?'→ '+th.action:'이 입력값을 불러오지 못했습니다.'}<span class="mono" style="font-size:10px;color:#666;margin-left:8px">src: ${src}</span></div></div></div>`;
+}
+
+function renderDashboard(){
+  const score=composite(state.values),rg=regime(score),pb=getPlaybook(score??50),analog=topAnalogs(state.values)[0];
+
+  document.getElementById('tab-dash').innerHTML=`<div class="hero" style="background:${rg.grad};box-shadow:${rg.glow}"><div class="row" style="align-items:flex-start"><div><div class="mono" style="font-size:11px;letter-spacing:3px;opacity:.82">${state.lastUpdated?`LIVE · ${fmtDate(state.lastUpdated)}`:'WAITING FOR DATA'}</div><div class="score-row"><div class="score">${score==null?'—':Math.round(score)}</div><div><div class="regime">${rg.label}</div><div class="mono" style="font-size:12px;opacity:.9;margin-top:4px">6 INDICATORS</div></div></div><div style="margin-top:10px;font-size:14px;opacity:.95">→ ${rg.view}</div></div><div><button class="btn" id="refreshBtn">${state.loading?'⏳ Refreshing':'🔄 Refresh'}</button></div></div><div class="bar"><div style="width:${score==null?0:score}%"></div></div><div class="row mono" style="margin-top:6px;font-size:10px;opacity:.7"><span>🥶 OVERSOLD</span><span>🔥 OVERHEATED</span></div></div><div class="grid two"><div class="card"><div class="section-title">ACTION PLAYBOOK</div>${pb.actions.map(a=>`<div class="action-item" style="margin-bottom:8px"><div class="mono" style="font-size:11px;color:#d4d4d8">→ ${a}</div></div>`).join('')}</div><div class="card"><div class="section-title">BEST ANALOG</div>${analog&&analog.sim>0?`<div class="analog-row"><div class="row" style="align-items:flex-start"><div><div style="font-size:18px;font-weight:800">${analog.e} ${analog.n}</div><div class="mono" style="font-size:11px;color:#6b7280;margin-top:4px">${analog.d} · ${analog.desc}</div></div><div class="mono" style="font-size:18px;font-weight:800;color:${analog.sim>.8?'#fca5a5':analog.sim>.65?'#fde68a':'#93c5fd'}">${Math.round(analog.sim*100)}%</div></div><div class="mini-grid"><div class="mini"><div class="t">3M</div><div class="v">${analog.af.m3}</div></div><div class="mini"><div class="t">6M</div><div class="v">${analog.af.m6}</div></div><div class="mini"><div class="t">1Y</div><div class="v">${analog.af.y1}</div></div></div><div class="mono" style="font-size:11px;color:#9ca3af;margin-top:10px">${analog.af.n}</div></div>`:'<div class="empty">Fallback values only.</div>'}</div></div><div class="card" style="margin-top:12px"><div class="section-title">LIVE INDICATORS</div>${INDICATORS.map(renderIndicatorRow).join('')}</div>`;
+
+  document.getElementById('refreshBtn').addEventListener('click',fetchAll);
+}
+
+function renderHistory(){
+  document.getElementById('tab-history').innerHTML=`<div class="card"><div class="section-title">HISTORICAL SCENARIOS</div>${PRESETS.map(p=>{const sc=composite(p.v),sim=cosineSimilarity(state.values,p.v);const color=sc<15?'#2563eb':sc<35?'#38bdf8':sc<65?'#eab308':sc<85?'#f97316':'#dc2626';return `<div class="analog-row" style="margin-bottom:10px"><div class="row" style="align-items:flex-start"><div><div style="font-size:16px;font-weight:800">${p.e} ${p.n}</div><div class="mono" style="font-size:11px;color:#6b7280;margin-top:4px">${p.d} · ${p.desc}</div></div><div style="text-align:right"><div class="mono" style="font-size:18px;font-weight:800;color:${color}">${Math.round(sc)}</div><div class="mono" style="font-size:11px;color:${sim>.8?'#fca5a5':sim>.65?'#fde68a':'#93c5fd'}">${Math.round(sim*100)}%</div></div></div><div class="bar" style="margin-top:10px"><div style="width:${sc}%;background:${color}"></div></div></div>`}).join('')}</div>`;
+}
+
+async function fetchNasdaqHistory() {
+  const res = await fetch('/api/nasdaq-history', { cache: 'no-store' });
+  if (!res.ok) throw new Error('history fetch failed');
+  return await res.json();
+}
+
+function normalize100(arr) {
+  const base = arr[0];
+  return arr.map(v => (v / base) * 100);
+}
+
+function cosine(a, b) {
+  let dot = 0, ma = 0, mb = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    ma += a[i] * a[i];
+    mb += b[i] * b[i];
+  }
+  return dot / (Math.sqrt(ma) * Math.sqrt(mb));
+}
+
+function findBestAnalog(series, dates, lookbackDays = 504, matchDays = 126, forwardDays = 252) {
+  const current2Y = series.slice(-lookbackDays);
+  const currentMatch = normalize100(current2Y.slice(-matchDays));
+  let best = null;
+
+  for (let start = 0; start < series.length - lookbackDays - forwardDays - 5; start++) {
+    const past2Y = series.slice(start, start + lookbackDays);
+    const pastMatch = normalize100(past2Y.slice(-matchDays));
+    const sim = cosine(currentMatch, pastMatch);
+
+    if (!best || sim > best.sim) {
+      best = {
+        sim,
+        start,
+        end: start + lookbackDays - 1,
+        past2Y,
+        forward1Y: series.slice(start + lookbackDays, start + lookbackDays + forwardDays)
+      };
+    }
+  }
+
+  if (!best) throw new Error('No analog found');
+
+  return {
+    similarity: Math.round(best.sim * 100),
+    analogStart: dates[best.start],
+    analogEnd: dates[best.end],
+    current2Y,
+    past2Y: best.past2Y,
+    forward1Y: best.forward1Y
+  };
+}
+
+async function renderCharts() {
+  try {
+    document.getElementById('tab-charts').innerHTML = `
+      <div class="card">
+        <div class="section-title">NASDAQ OVERLAY</div>
+        <div class="mono" style="font-size:11px;color:#9ca3af;margin-bottom:10px">Loading Nasdaq history…</div>
+        <div class="chart-wrap"><canvas id="nasdaqOverlay"></canvas></div>
+      </div>
+    `;
+
+    const d = await fetchNasdaqHistory();
+    if (!d || !Array.isArray(d.closes) || d.closes.length < 800) throw new Error('Not enough history');
+
+    const result = findBestAnalog(d.closes, d.dates);
+    const currentNorm = normalize100(result.current2Y);
+    const pastNorm = normalize100(result.past2Y);
+    const lastPast = pastNorm.at(-1);
+    const baseForward = result.past2Y.at(-1);
+    const forwardNorm = result.forward1Y.map(v => (v / baseForward) * lastPast);
+
+    const labels = [
+      ...Array.from({ length: currentNorm.length }, (_, i) => `-${currentNorm.length - i}`),
+      ...Array.from({ length: forwardNorm.length }, (_, i) => `+${i + 1}`)
+    ];
+
+    const currentSeries = [...currentNorm, ...Array(forwardNorm.length).fill(null)];
+    const pastSeries = [...pastNorm, ...Array(forwardNorm.length).fill(null)];
+    const forwardSeries = [...Array(currentNorm.length - 1).fill(null), pastNorm.at(-1), ...forwardNorm];
+
+    document.getElementById('tab-charts').innerHTML = `
+      <div class="card">
+        <div class="section-title">NASDAQ OVERLAY</div>
+        <div class="mono" style="font-size:11px;color:#9ca3af;margin-bottom:10px">
+          Similarity ${result.similarity}% · Analog ${result.analogStart} → ${result.analogEnd}
+        </div>
+        <div class="chart-wrap"><canvas id="nasdaqOverlay"></canvas></div>
+      </div>
+    `;
+
+    Object.values(state.charts).forEach(c => { try { c.destroy(); } catch {} });
+
+    state.charts.overlay = new Chart(document.getElementById('nasdaqOverlay'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Current Nasdaq 2Y',
+            data: currentSeries,
+            borderColor: '#22c55e',
+            pointRadius: 0,
+            borderWidth: 2,
+            tension: 0.15
+          },
+          {
+            label: 'Closest Historical 2Y',
+            data: pastSeries,
+            borderColor: '#f59e0b',
+            pointRadius: 0,
+            borderWidth: 2,
+            tension: 0.15
+          },
+          {
+            label: 'Historical Next 1Y',
+            data: forwardSeries,
+            borderColor: '#60a5fa',
+            borderDash: [6, 6],
+            pointRadius: 0,
+            borderWidth: 2,
+            tension: 0.15
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { labels: { color: '#9ca3af' } }
+        },
+        scales: {
+          x: {
+            ticks: { color: '#6b7280', maxTicksLimit: 12 },
+            grid: { color: '#1f1f25' }
+          },
+          y: {
+            ticks: { color: '#6b7280' },
+            grid: { color: '#1f1f25' }
+          }
+        }
+      }
+    });
+  } catch (err) {
+    document.getElementById('tab-charts').innerHTML = `
+      <div class="card">
+        <div class="section-title">NASDAQ OVERLAY</div>
+        <div class="empty">
+          Chart failed to load<br>
+          <span class="mono" style="font-size:11px;color:#94a3b8">${err.message}</span>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function renderNotes(){
+  document.getElementById('tab-notes').innerHTML=`<div class="card"><div class="section-title">HOW THIS STAYS ALIVE</div><div class="note" style="margin-bottom:8px"><div class="mono" style="font-size:11px;color:#cbd5e1">1. API route tries upstream source first.</div></div><div class="note" style="margin-bottom:8px"><div class="mono" style="font-size:11px;color:#cbd5e1">2. If upstream fails, API still returns a numeric fallback with stale=true.</div></div><div class="note"><div class="mono" style="font-size:11px;color:#cbd5e1">3. Frontend renders fallback/stale values instead of NO DATA.</div></div></div>`;
+}
+
+function renderAll(){
+  renderStatus();
+  renderDashboard();
+  renderHistory();
+  renderNotes();
+  if(state.tab==='charts') renderCharts();
+}
+
+bindTabs();
+renderAll();
+fetchAll();
+setInterval(fetchAll, 300000);
 </script>
 </body>
 </html>
