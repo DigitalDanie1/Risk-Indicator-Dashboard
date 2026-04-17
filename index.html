@@ -2,54 +2,157 @@ import { useState, useEffect, useCallback, useRef } from "react";
 
 const INDICATORS = [
   { id:"vix", name:"VIX", cat:"Sentiment", icon:"⚡", unit:"",
-    thresholds:[{max:12,label:"Complacent",score:85,color:"hot"},{max:18,label:"Calm",score:65,color:"warm"},{max:25,label:"Cautious",score:40,color:"neutral"},{max:35,label:"Fearful",score:20,color:"cool"},{max:Infinity,label:"Panic",score:5,color:"cold"}] },
+    thresholds:[
+      {max:12,label:"Complacent",score:85,color:"hot",action:"헤지 비용 최저 → 풋옵션 매수 적기"},
+      {max:18,label:"Calm",score:65,color:"warm",action:"포트폴리오 보호 점검"},
+      {max:25,label:"Cautious",score:40,color:"neutral",action:"현 포지션 유지"},
+      {max:35,label:"Fearful",score:20,color:"cool",action:"워치리스트 종목 분할매수 시작"},
+      {max:Infinity,label:"Panic",score:5,color:"cold",action:"공포 극대화 → 우량주 적극 매수 구간"}
+    ]},
   { id:"fearGreed", name:"Fear & Greed", cat:"Sentiment", icon:"🧠", unit:"",
-    thresholds:[{max:20,label:"Extreme Fear",score:5,color:"cold"},{max:40,label:"Fear",score:25,color:"cool"},{max:60,label:"Neutral",score:50,color:"neutral"},{max:80,label:"Greed",score:75,color:"warm"},{max:Infinity,label:"Extreme Greed",score:95,color:"hot"}] },
+    thresholds:[
+      {max:20,label:"Extreme Fear",score:5,color:"cold",action:"역발상 매수. 현금 비중 줄이기"},
+      {max:40,label:"Fear",score:25,color:"cool",action:"분할 매수 시작점"},
+      {max:60,label:"Neutral",score:50,color:"neutral",action:"기존 전략 유지"},
+      {max:80,label:"Greed",score:75,color:"warm",action:"신규 매수 자제. 리밸런싱 검토"},
+      {max:Infinity,label:"Extreme Greed",score:95,color:"hot",action:"이익 실현. 현금 비중 확대"}
+    ]},
   { id:"putCall", name:"Put/Call", cat:"Sentiment", icon:"📊", unit:"",
-    thresholds:[{max:0.6,label:"Euphoria",score:90,color:"hot"},{max:0.8,label:"Bullish",score:70,color:"warm"},{max:1.0,label:"Neutral",score:50,color:"neutral"},{max:1.2,label:"Cautious",score:30,color:"cool"},{max:Infinity,label:"Panic Hedge",score:10,color:"cold"}] },
+    thresholds:[
+      {max:0.6,label:"Euphoria",score:90,color:"hot",action:"보호적 풋 매수. 콜 매도 검토"},
+      {max:0.8,label:"Bullish",score:70,color:"warm",action:"추격 매수 자제"},
+      {max:1.0,label:"Neutral",score:50,color:"neutral",action:"시장 방향성 관망"},
+      {max:1.2,label:"Cautious",score:30,color:"cool",action:"반등 시 매수 준비"},
+      {max:Infinity,label:"Panic Hedge",score:10,color:"cold",action:"과도한 헤지 = 역발상 매수 신호"}
+    ]},
   { id:"spPE", name:"S&P P/E", cat:"Valuation", icon:"💰", unit:"x",
-    thresholds:[{max:14,label:"Cheap",score:10,color:"cold"},{max:18,label:"Fair",score:30,color:"cool"},{max:22,label:"Rich",score:55,color:"neutral"},{max:28,label:"Expensive",score:75,color:"warm"},{max:Infinity,label:"Bubble",score:95,color:"hot"}] },
+    thresholds:[
+      {max:14,label:"Cheap",score:10,color:"cold",action:"인덱스 비중 확대. 장기투자 적기"},
+      {max:18,label:"Fair",score:30,color:"cool",action:"정상 밸류에이션. 선별적 매수"},
+      {max:22,label:"Rich",score:55,color:"neutral",action:"밸류 대비 성장 확인 후 매수"},
+      {max:28,label:"Expensive",score:75,color:"warm",action:"신규 진입 축소. 이익 실현 시작"},
+      {max:Infinity,label:"Bubble",score:95,color:"hot",action:"위험 자산 축소. 방어주/현금 이동"}
+    ]},
   { id:"buffett", name:"Buffett Ind.", cat:"Valuation", icon:"🏛️", unit:"%",
-    thresholds:[{max:70,label:"Deep Value",score:5,color:"cold"},{max:100,label:"Undervalued",score:25,color:"cool"},{max:130,label:"Fair",score:50,color:"neutral"},{max:170,label:"Overvalued",score:75,color:"warm"},{max:Infinity,label:"Extreme",score:95,color:"hot"}] },
+    thresholds:[
+      {max:70,label:"Deep Value",score:5,color:"cold",action:"올인 구간. 역사적 저평가"},
+      {max:100,label:"Undervalued",score:25,color:"cool",action:"적극 매수. 장기 수익률 기대"},
+      {max:130,label:"Fair",score:50,color:"neutral",action:"정상 범위. DCA 지속"},
+      {max:170,label:"Overvalued",score:75,color:"warm",action:"신규 자금 투입 속도 줄이기"},
+      {max:Infinity,label:"Extreme",score:95,color:"hot",action:"현금/채권 비중 30%+ 확보"}
+    ]},
   { id:"breadth", name:">200d MA", cat:"Breadth", icon:"📈", unit:"%",
-    thresholds:[{max:15,label:"Capitulation",score:5,color:"cold"},{max:30,label:"Oversold",score:20,color:"cool"},{max:60,label:"Healthy",score:50,color:"neutral"},{max:80,label:"Extended",score:75,color:"warm"},{max:Infinity,label:"Euphoric",score:92,color:"hot"}] },
+    thresholds:[
+      {max:15,label:"Capitulation",score:5,color:"cold",action:"시장 전체 투매 → 브로드 인덱스 매수"},
+      {max:30,label:"Oversold",score:20,color:"cool",action:"섹터 로테이션 매수 기회"},
+      {max:60,label:"Healthy",score:50,color:"neutral",action:"건전한 랠리. 추세 추종"},
+      {max:80,label:"Extended",score:75,color:"warm",action:"소수 종목 의존 체크. 분산 강화"},
+      {max:Infinity,label:"Euphoric",score:92,color:"hot",action:"과열. 래깅 섹터로 교체 검토"}
+    ]},
   { id:"yieldCurve", name:"Yield Curve", cat:"Macro", icon:"📐", unit:"%",
-    thresholds:[{max:-0.5,label:"Deep Inversion",score:80,color:"warm"},{max:0,label:"Inverted",score:65,color:"warm"},{max:0.5,label:"Flat",score:45,color:"neutral"},{max:1.5,label:"Normal",score:30,color:"cool"},{max:Infinity,label:"Steep",score:20,color:"cool"}] },
+    thresholds:[
+      {max:-0.5,label:"Deep Inversion",score:80,color:"warm",action:"경기침체 대비. 방어주/국채 비중↑"},
+      {max:0,label:"Inverted",score:65,color:"warm",action:"사이클 후반. 경기민감주 축소"},
+      {max:0.5,label:"Flat",score:45,color:"neutral",action:"전환기. 현금 유보하며 관망"},
+      {max:1.5,label:"Normal",score:30,color:"cool",action:"정상 환경. 주식 비중 유지"},
+      {max:Infinity,label:"Steep",score:20,color:"cool",action:"회복 초기. 금융/소형주 매수 유리"}
+    ]},
   { id:"creditSpread", name:"HY Spread", cat:"Macro", icon:"🏦", unit:"%",
-    thresholds:[{max:3,label:"Risk-On",score:80,color:"warm"},{max:4,label:"Normal",score:50,color:"neutral"},{max:5.5,label:"Cautious",score:35,color:"cool"},{max:8,label:"Stress",score:15,color:"cold"},{max:Infinity,label:"Crisis",score:5,color:"cold"}] },
+    thresholds:[
+      {max:3,label:"Risk-On",score:80,color:"warm",action:"크레딧 과열. HY채권 축소"},
+      {max:4,label:"Normal",score:50,color:"neutral",action:"정상. 크레딧 포지션 유지"},
+      {max:5.5,label:"Cautious",score:35,color:"cool",action:"스트레스 초기. IG채권으로 이동"},
+      {max:8,label:"Stress",score:15,color:"cold",action:"유동성 확보. 디폴트 위험 모니터링"},
+      {max:Infinity,label:"Crisis",score:5,color:"cold",action:"신용 경색. 국채/현금만 보유"}
+    ]},
   { id:"rsi", name:"RSI (14w)", cat:"Technical", icon:"🔄", unit:"",
-    thresholds:[{max:25,label:"Very Oversold",score:5,color:"cold"},{max:35,label:"Oversold",score:20,color:"cool"},{max:65,label:"Neutral",score:50,color:"neutral"},{max:75,label:"Overbought",score:75,color:"warm"},{max:Infinity,label:"V. Overbought",score:95,color:"hot"}] },
+    thresholds:[
+      {max:25,label:"Very Oversold",score:5,color:"cold",action:"기술적 반등 임박. 단기 매수"},
+      {max:35,label:"Oversold",score:20,color:"cool",action:"분할매수 진입 구간"},
+      {max:65,label:"Neutral",score:50,color:"neutral",action:"추세 방향 확인 후 행동"},
+      {max:75,label:"Overbought",score:75,color:"warm",action:"추가 매수 보류. 트레일링 스탑"},
+      {max:Infinity,label:"V. Overbought",score:95,color:"hot",action:"단기 과열. 부분 이익실현"}
+    ]},
   { id:"maDist", name:"Dist 200d MA", cat:"Technical", icon:"📏", unit:"%",
-    thresholds:[{max:-12,label:"Crash",score:3,color:"cold"},{max:-5,label:"Oversold",score:18,color:"cool"},{max:5,label:"Normal",score:45,color:"neutral"},{max:12,label:"Extended",score:75,color:"warm"},{max:Infinity,label:"Blow-Off",score:95,color:"hot"}] },
+    thresholds:[
+      {max:-12,label:"Crash",score:3,color:"cold",action:"패닉 셀링 구간. 용기 있는 매수"},
+      {max:-5,label:"Oversold",score:18,color:"cool",action:"200일선 복귀 베팅. 분할매수"},
+      {max:5,label:"Normal",score:45,color:"neutral",action:"정상 범위. 포지션 유지"},
+      {max:12,label:"Extended",score:75,color:"warm",action:"평균 회귀 리스크. 트레일링 스탑 설정"},
+      {max:Infinity,label:"Blow-Off",score:95,color:"hot",action:"극단적 괴리. 비중 축소 필수"}
+    ]},
+];
+
+const PLAYBOOK = [
+  { min:0, max:15, zone:"EXTREME FEAR", color:"#2563EB", emoji:"🟦",
+    actions:[
+      "현금 비중 → 주식으로 공격적 전환 (70-90% 주식)",
+      "우량 대형주 (S&P 500 ETF) 분할매수 시작",
+      "공포에 팔지 말 것 — 역사적으로 1년 내 +38% 평균 반등",
+      "HY채권 스프레드 확인 후 IG등급 회사채 매수 검토",
+      "변동성 매도 전략 (커버드콜, 풋매도) 수익률 극대화",
+    ]},
+  { min:15, max:35, zone:"OVERSOLD", color:"#38bdf8", emoji:"🔵",
+    actions:[
+      "워치리스트 종목 분할매수 (3-4회 나눠서)",
+      "현금 비중 20-30%로 점진적 축소",
+      "경기민감 섹터 (금융, 산업재) 비중 확대 검토",
+      "포트폴리오 리밸런싱 — 하락한 자산군 매수",
+      "달러 약세 시 해외 자산 편입 고려",
+    ]},
+  { min:35, max:65, zone:"NEUTRAL", color:"#eab308", emoji:"🟡",
+    actions:[
+      "기존 전략 유지. DCA (정기 적립) 계속",
+      "포트폴리오 점검 — 목표 비중과 괴리 확인",
+      "개별 종목 펀더멘털 분석에 집중",
+      "헤지 비용 적정 시 보호적 풋 매수 검토",
+      "다음 방향성 확인될 때까지 현금 10-20% 유보",
+    ]},
+  { min:65, max:85, zone:"OVERHEATED", color:"#f97316", emoji:"🟠",
+    actions:[
+      "이익 실현 시작 — 가장 많이 오른 종목부터",
+      "현금 비중 25-35%로 확대",
+      "성장주 → 가치주/배당주 로테이션",
+      "트레일링 스탑 5-10% 설정",
+      "신규 매수 중단. 관망 모드",
+    ]},
+  { min:85, max:100, zone:"EXTREME GREED", color:"#dc2626", emoji:"🔴",
+    actions:[
+      "포트폴리오 30-50% 현금화",
+      "방어 섹터 (유틸리티, 헬스케어, 필수소비재)로 이동",
+      "풋옵션 또는 인버스 ETF로 다운사이드 헤지",
+      "장기 국채 (TLT) 비중 확대 — 안전자산 이동",
+      "FOMO 경계 — 추격매수는 최악의 선택",
+    ]},
 ];
 
 const PRESETS = [
   { id:"black_monday",name:"Black Monday",date:"Oct 1987",emoji:"⬛",desc:"S&P -20.47% in one day",color:"#1e40af",
-    aftermath:{sp_3m:"+15%",sp_6m:"+23%",sp_1y:"+21%",narrative:"V자 반등. 1988년 연간 +12%. 공포가 매수 기회였음."},
+    aftermath:{sp_3m:"+15%",sp_6m:"+23%",sp_1y:"+21%",narrative:"V자 반등. 1988년 +12%. 공포가 매수 기회였음."},
     values:{vix:60,fearGreed:3,putCall:1.5,spPE:14,buffett:55,breadth:10,yieldCurve:0.8,creditSpread:5.0,rsi:15,maDist:-25}},
   { id:"dotcom_peak",name:"Dot-Com Peak",date:"Mar 2000",emoji:"🫧",desc:"NASDAQ 5,048. CAPE ~44.",color:"#FF2D2D",
-    aftermath:{sp_3m:"-4%",sp_6m:"-7%",sp_1y:"-12%",narrative:"NASDAQ -78% over 2.5yrs. S&P -49% by Oct 2002. 15년간 전고점 회복 못함."},
+    aftermath:{sp_3m:"-4%",sp_6m:"-7%",sp_1y:"-12%",narrative:"NASDAQ -78%. S&P -49% by Oct 2002. 15년간 전고점 회복 못함."},
     values:{vix:24,fearGreed:85,putCall:0.55,spPE:44,buffett:146,breadth:65,yieldCurve:-0.2,creditSpread:5.5,rsi:72,maDist:15}},
   { id:"dotcom_bottom",name:"Dot-Com Bottom",date:"Oct 2002",emoji:"💀",desc:"NASDAQ -78%. Enron, WorldCom.",color:"#2563EB",
-    aftermath:{sp_3m:"+8%",sp_6m:"+14%",sp_1y:"+24%",narrative:"5년간 불장 시작. 2007년까지 S&P 두 배. 최악이 최고의 매수 타이밍."},
+    aftermath:{sp_3m:"+8%",sp_6m:"+14%",sp_1y:"+24%",narrative:"5년 불장 시작. 최악이 최고의 매수 타이밍."},
     values:{vix:40,fearGreed:10,putCall:1.3,spPE:28,buffett:73,breadth:12,yieldCurve:1.8,creditSpread:10.7,rsi:22,maDist:-30}},
   { id:"gfc_pre",name:"Pre-GFC Peak",date:"Oct 2007",emoji:"🏠",desc:"Housing bubble top.",color:"#FF8C00",
-    aftermath:{sp_3m:"-10%",sp_6m:"-18%",sp_1y:"-40%",narrative:"S&P 1,565→666. -57%. 금융시스템 붕괴. 회복에 5.5년."},
+    aftermath:{sp_3m:"-10%",sp_6m:"-18%",sp_1y:"-40%",narrative:"S&P 1,565→666. -57%. 회복에 5.5년."},
     values:{vix:16,fearGreed:75,putCall:0.6,spPE:22,buffett:109,breadth:75,yieldCurve:-0.1,creditSpread:2.6,rsi:68,maDist:10}},
   { id:"gfc_crash",name:"GFC Crash",date:"Nov 2008",emoji:"📉",desc:"Lehman. VIX 80. HY 21.8%.",color:"#1e40af",
-    aftermath:{sp_3m:"-25%",sp_6m:"+1%",sp_1y:"+23%",narrative:"추가 하락 후 2009.3 바닥. 이후 11년 최장 불장 시작."},
+    aftermath:{sp_3m:"-25%",sp_6m:"+1%",sp_1y:"+23%",narrative:"추가 하락 후 2009.3 바닥. 이후 11년 불장."},
     values:{vix:80,fearGreed:5,putCall:1.6,spPE:13,buffett:57,breadth:5,yieldCurve:1.7,creditSpread:21.8,rsi:18,maDist:-38}},
   { id:"gfc_bottom",name:"GFC Bottom",date:"Mar 2009",emoji:"🕳️",desc:"S&P 666. Buffett 56%.",color:"#2563EB",
-    aftermath:{sp_3m:"+36%",sp_6m:"+51%",sp_1y:"+68%",narrative:"역사상 최고의 매수 시점. 2009.3~2020.2 까지 11년 불장."},
+    aftermath:{sp_3m:"+36%",sp_6m:"+51%",sp_1y:"+68%",narrative:"역사상 최고의 매수 시점. 11년 불장 시작."},
     values:{vix:50,fearGreed:8,putCall:1.4,spPE:15,buffett:56,breadth:3,yieldCurve:2.0,creditSpread:16.5,rsi:20,maDist:-35}},
   { id:"covid",name:"COVID Crash",date:"Mar 2020",emoji:"🦠",desc:"VIX ATH 82.69.",color:"#1e40af",
-    aftermath:{sp_3m:"+30%",sp_6m:"+46%",sp_1y:"+75%",narrative:"역대 최빠른 회복. 5개월만에 전고점 돌파. 이후 +100%."},
+    aftermath:{sp_3m:"+30%",sp_6m:"+46%",sp_1y:"+75%",narrative:"역대 최빠른 회복. 5개월 만에 전고점. 이후 +100%."},
     values:{vix:82,fearGreed:2,putCall:1.5,spPE:20,buffett:125,breadth:8,yieldCurve:0.3,creditSpread:10.9,rsi:16,maDist:-30}},
   { id:"covid_euphoria",name:"Post-COVID Mania",date:"Dec 2021",emoji:"🚀",desc:"Meme stocks. Buffett 190%.",color:"#FF2D2D",
     aftermath:{sp_3m:"-8%",sp_6m:"-20%",sp_1y:"-19%",narrative:"2022 베어마켓. S&P -25%, NASDAQ -33%. Fed 0→4.5%."},
     values:{vix:17,fearGreed:82,putCall:0.55,spPE:29,buffett:190,breadth:70,yieldCurve:0.8,creditSpread:3.0,rsi:70,maDist:12}},
   { id:"bear_2022",name:"2022 Bear",date:"Oct 2022",emoji:"🐻",desc:"Fed hikes. S&P -25%.",color:"#3BA0D6",
-    aftermath:{sp_3m:"+8%",sp_6m:"+15%",sp_1y:"+21%",narrative:"AI 테마로 2023 +24%, 2024 +23%, 2025 +16%. 3년 연속 강세."},
+    aftermath:{sp_3m:"+8%",sp_6m:"+15%",sp_1y:"+21%",narrative:"AI 테마로 3년 연속 강세 (2023-2025)."},
     values:{vix:33,fearGreed:15,putCall:1.2,spPE:18,buffett:140,breadth:20,yieldCurve:-0.5,creditSpread:5.9,rsi:28,maDist:-15}},
   { id:"tariff_2025",name:"Tariff Shock",date:"Apr 2025",emoji:"💣",desc:"VIX 52. Liberation Day.",color:"#3BA0D6",
     aftermath:{sp_3m:"TBD",sp_6m:"TBD",sp_1y:"TBD",narrative:"진행 중. 관세 협상 결과에 따라 결정."},
@@ -69,42 +172,25 @@ function thermoStyle(s){
 }
 function similarity(a,b){
   const normalize=(ind,val)=>{const scores=ind.thresholds.map(t=>t.score);const mn=Math.min(...scores),mx=Math.max(...scores);return(getScore(ind,val).score-mn)/(mx-mn||1);};
-  let dot=0,magA=0,magB=0;
-  INDICATORS.forEach(ind=>{const na=normalize(ind,a[ind.id]||0),nb=normalize(ind,b[ind.id]||0);dot+=na*nb;magA+=na*na;magB+=nb*nb;});
+  let dot=0,magA=0,magB=0;INDICATORS.forEach(ind=>{const na=normalize(ind,a[ind.id]||0),nb=normalize(ind,b[ind.id]||0);dot+=na*nb;magA+=na*na;magB+=nb*nb;});
   return magA&&magB?dot/(Math.sqrt(magA)*Math.sqrt(magB)):0;
 }
 function findMostSimilar(vals){let best=null,bestSim=0;PRESETS.forEach(p=>{const s=similarity(vals,p.values);if(s>bestSim){bestSim=s;best=p;}});return{preset:best,similarity:bestSim};}
+function getPlaybook(score){return PLAYBOOK.find(p=>score>=p.min&&score<p.max)||PLAYBOOK[2];}
 
 const STORE_KEY="mkt-temp-snapshots";
 const M="'JetBrains Mono',monospace";
 const S="'IBM Plex Sans',sans-serif";
 
-// ─── FETCHERS ───────────────────────────────────────────────────
 async function fetchVIX(){try{const r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?range=1d&interval=1d");const d=await r.json();return{value:d.chart.result[0].meta.regularMarketPrice,asOf:new Date(d.chart.result[0].meta.regularMarketTime*1000)};}catch{return null;}}
 async function fetchFearGreed(){try{const r=await fetch("https://production.dataviz.cnn.io/index/fearandgreed/graphdata");const d=await r.json();return{value:Math.round(d.fear_and_greed.score),asOf:new Date(d.fear_and_greed.timestamp)};}catch{return null;}}
-async function fetchRSI(){try{
-  const r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1mo&interval=1d");const d=await r.json();
-  const ts=d.chart.result[0].timestamp;const c=d.chart.result[0].indicators.quote[0].close.filter(v=>v!=null);
-  if(c.length<15)return null;let g=0,l=0;
-  for(let i=c.length-14;i<c.length;i++){const diff=c[i]-c[i-1];if(diff>0)g+=diff;else l-=diff;}
-  return{value:Math.round(100-100/(1+(g/14)/(l/14||0.001))),asOf:new Date(ts[ts.length-1]*1000)};
-}catch{return null;}}
-async function fetchMADist(){try{
-  const r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1y&interval=1d");const d=await r.json();
-  const ts=d.chart.result[0].timestamp;const c=d.chart.result[0].indicators.quote[0].close.filter(v=>v!=null);
-  const cur=c.at(-1),sma=c.slice(-200).reduce((a,b)=>a+b,0)/Math.min(c.length,200);
-  return{value:Math.round(((cur-sma)/sma)*1000)/10,asOf:new Date(ts[ts.length-1]*1000)};
-}catch{return null;}}
-async function fetchYieldCurve(){try{
-  const[r10,r2]=await Promise.all([fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?range=1d&interval=1d"),fetch("https://query1.finance.yahoo.com/v8/finance/chart/2YY%3DF?range=1d&interval=1d")]);
-  const d10=await r10.json(),d2=await r2.json();
-  return{value:Math.round((d10.chart.result[0].meta.regularMarketPrice-d2.chart.result[0].meta.regularMarketPrice)*100)/100,asOf:new Date(d10.chart.result[0].meta.regularMarketTime*1000)};
-}catch{return null;}}
+async function fetchRSI(){try{const r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1mo&interval=1d");const d=await r.json();const ts=d.chart.result[0].timestamp;const c=d.chart.result[0].indicators.quote[0].close.filter(v=>v!=null);if(c.length<15)return null;let g=0,l=0;for(let i=c.length-14;i<c.length;i++){const diff=c[i]-c[i-1];if(diff>0)g+=diff;else l-=diff;}return{value:Math.round(100-100/(1+(g/14)/(l/14||0.001))),asOf:new Date(ts[ts.length-1]*1000)};}catch{return null;}}
+async function fetchMADist(){try{const r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1y&interval=1d");const d=await r.json();const ts=d.chart.result[0].timestamp;const c=d.chart.result[0].indicators.quote[0].close.filter(v=>v!=null);const cur=c.at(-1),sma=c.slice(-200).reduce((a,b)=>a+b,0)/Math.min(c.length,200);return{value:Math.round(((cur-sma)/sma)*1000)/10,asOf:new Date(ts[ts.length-1]*1000)};}catch{return null;}}
+async function fetchYieldCurve(){try{const[r10,r2]=await Promise.all([fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?range=1d&interval=1d"),fetch("https://query1.finance.yahoo.com/v8/finance/chart/2YY%3DF?range=1d&interval=1d")]);const d10=await r10.json(),d2=await r2.json();return{value:Math.round((d10.chart.result[0].meta.regularMarketPrice-d2.chart.result[0].meta.regularMarketPrice)*100)/100,asOf:new Date(d10.chart.result[0].meta.regularMarketTime*1000)};}catch{return null;}}
 
 const FETCHERS={vix:fetchVIX,fearGreed:fetchFearGreed,rsi:fetchRSI,maDist:fetchMADist,yieldCurve:fetchYieldCurve};
 const MANUAL_IDS=["putCall","spPE","buffett","breadth","creditSpread"];
 const MANUAL_DEFAULTS={putCall:0.9,spPE:25,buffett:200,breadth:55,creditSpread:3.5};
-
 function fmtDate(d){if(!d)return"";return d.toLocaleDateString("en-US",{month:"short",day:"numeric"})+" "+d.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"});}
 
 // ─── COMPONENTS ─────────────────────────────────────────────────
@@ -129,20 +215,42 @@ function Thermo({score,label,sub}){
   );
 }
 
+function PlaybookCard({score}){
+  const pb=getPlaybook(score);
+  return(
+    <div style={{background:"#111113",border:`1px solid ${pb.color}33`,borderRadius:14,padding:"18px 20px",marginTop:16}}>
+      <div style={{fontFamily:M,fontSize:11,color:pb.color,letterSpacing:2,marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+        <span style={{fontSize:16}}>{pb.emoji}</span> ACTION PLAYBOOK — {pb.zone}
+      </div>
+      {pb.actions.map((a,i)=>(
+        <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"8px 0",borderBottom:i<pb.actions.length-1?"1px solid #1a1a1f":"none"}}>
+          <span style={{fontFamily:M,fontSize:12,color:pb.color,flexShrink:0,marginTop:1}}>{i+1}</span>
+          <span style={{fontFamily:S,fontSize:13,color:"#ccc",lineHeight:1.5}}>{a}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function IndicatorRow({ind,value,onChange,autoFetched,asOf}){
   const r=getScore(ind,value);const c=COLORS[r.color];const isManual=MANUAL_IDS.includes(ind.id);
   return(
-    <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 0",borderBottom:"1px solid #1a1a1f",flexWrap:"wrap"}}>
-      <span style={{fontFamily:M,fontSize:12,color:"#666",width:22}}>{ind.icon}</span>
-      <span style={{fontFamily:S,fontSize:14,fontWeight:600,color:"#e5e5e5",width:95,flexShrink:0}}>{ind.name}</span>
-      <span style={{background:c.bg,color:c.text,fontFamily:M,fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:5,width:88,textAlign:"center",flexShrink:0}}>{r.label}</span>
-      <input type="number" value={value} step="any"
-        onChange={e=>{const v=parseFloat(e.target.value);if(!isNaN(v))onChange(v);}}
-        style={{width:66,background:"#1a1a1f",border:"1px solid #333",borderRadius:6,color:"#e5e5e5",fontFamily:M,fontSize:13,fontWeight:600,padding:"4px 6px",textAlign:"right"}}/>
-      <span style={{fontFamily:M,fontSize:11,color:"#555",width:14}}>{ind.unit}</span>
-      <span style={{fontFamily:M,fontSize:9,color:isManual?"#665500":autoFetched?"#2a6":"#444",marginLeft:"auto"}}>
-        {isManual?"✏️ manual":autoFetched?`✓ ${asOf||"live"}`:"—"}
-      </span>
+    <div style={{padding:"12px 0",borderBottom:"1px solid #1a1a1f"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <span style={{fontFamily:M,fontSize:12,color:"#666",width:22}}>{ind.icon}</span>
+        <span style={{fontFamily:S,fontSize:14,fontWeight:600,color:"#e5e5e5",width:95,flexShrink:0}}>{ind.name}</span>
+        <span style={{background:c.bg,color:c.text,fontFamily:M,fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:5,width:88,textAlign:"center",flexShrink:0}}>{r.label}</span>
+        <input type="number" value={value} step="any"
+          onChange={e=>{const v=parseFloat(e.target.value);if(!isNaN(v))onChange(v);}}
+          style={{width:66,background:"#1a1a1f",border:"1px solid #333",borderRadius:6,color:"#e5e5e5",fontFamily:M,fontSize:13,fontWeight:600,padding:"4px 6px",textAlign:"right"}}/>
+        <span style={{fontFamily:M,fontSize:11,color:"#555",width:14}}>{ind.unit}</span>
+        <span style={{fontFamily:M,fontSize:9,color:isManual?"#665500":autoFetched?"#2a6":"#444",marginLeft:"auto"}}>
+          {isManual?"✏️ manual":autoFetched?`✓ ${asOf||""}`:"—"}
+        </span>
+      </div>
+      <div style={{marginLeft:32,marginTop:4,fontFamily:M,fontSize:10,color:"#666",fontStyle:"italic"}}>
+        → {r.action}
+      </div>
     </div>
   );
 }
@@ -183,10 +291,11 @@ function SimilarityBadge({vals}){
 function TabDashboard({values,setValues,autoFetched,timestamps,fetchAll,loading,lastUpdate}){
   const score=composite(values);
   return(
-    <div style={{display:"flex",flexDirection:"column",gap:16}}>
+    <div style={{display:"flex",flexDirection:"column",gap:0}}>
       <Thermo score={score} label={lastUpdate?`LIVE · ${lastUpdate}`:undefined}/>
+      <PlaybookCard score={score}/>
       <SimilarityBadge vals={values}/>
-      <div style={{background:"#111113",border:"1px solid #2a2a2f",borderRadius:14,padding:"16px 20px"}}>
+      <div style={{background:"#111113",border:"1px solid #2a2a2f",borderRadius:14,padding:"16px 20px",marginTop:16}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
           <span style={{fontFamily:M,fontSize:11,color:"#444",letterSpacing:3}}>INDICATORS</span>
           <button onClick={fetchAll} disabled={loading}
@@ -197,8 +306,7 @@ function TabDashboard({values,setValues,autoFetched,timestamps,fetchAll,loading,
         {INDICATORS.map(ind=>(
           <IndicatorRow key={ind.id} ind={ind} value={values[ind.id]}
             onChange={v=>setValues(p=>({...p,[ind.id]:v}))}
-            autoFetched={autoFetched.includes(ind.id)}
-            asOf={timestamps[ind.id]||null}/>
+            autoFetched={autoFetched.includes(ind.id)} asOf={timestamps[ind.id]||null}/>
         ))}
       </div>
     </div>
@@ -213,7 +321,7 @@ function TabHistory({values,loadPreset,expandedId,setExpandedId}){
         const s=Math.round(composite(p.values));const bc=barColor(s);
         const sim=Math.round(similarity(values,p.values)*100);const a=p.aftermath;const exp=expandedId===p.id;
         return(
-          <div key={p.id} style={{background:"#111113",border:`1px solid ${exp?"#333":"#2a2a2f"}`,borderRadius:14,overflow:"hidden",transition:"all 0.2s"}}>
+          <div key={p.id} style={{background:"#111113",border:`1px solid ${exp?"#333":"#2a2a2f"}`,borderRadius:14,overflow:"hidden"}}>
             <div onClick={()=>setExpandedId(exp?null:p.id)} style={{padding:"16px 20px",cursor:"pointer"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -283,6 +391,7 @@ function TabSnapshots({values,snapshots,saveSnapshot,deleteSnapshot}){
         const similar=findMostSimilar(snap.values);
         const daysSince=Math.round((Date.now()-snap.timestamp)/(1000*60*60*24));
         const delta=i<snapshots.length-1?Math.round(composite(snap.values)-composite(snapshots[i+1].values)):null;
+        const pb=getPlaybook(s);
         return(
           <div key={snap.timestamp} style={{background:"#111113",border:"1px solid #2a2a2f",borderRadius:14,padding:"16px 20px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
@@ -299,6 +408,7 @@ function TabSnapshots({values,snapshots,saveSnapshot,deleteSnapshot}){
                 <div style={{fontFamily:M,fontSize:11,color:"#555",marginTop:4}}>
                   ≈ {similar.preset?.emoji} {similar.preset?.name} ({Math.round(similar.similarity*100)}%)
                 </div>
+                <div style={{fontFamily:M,fontSize:10,color:pb.color,marginTop:4}}>{pb.emoji} {pb.zone}</div>
               </div>
               <button onClick={()=>deleteSnapshot(snap.timestamp)}
                 style={{background:"none",border:"none",color:"#444",cursor:"pointer",fontFamily:M,fontSize:14}}>✕</button>
@@ -331,33 +441,19 @@ export default function App(){
   useEffect(()=>{(async()=>{try{const r=await window.storage.get(STORE_KEY);if(r)setSnapshots(JSON.parse(r.value));}catch{}})();},[]);
 
   const fetchAll=useCallback(async()=>{
-    setLoading(true);
-    const fetched=[];const newTs={...timestamps};
+    setLoading(true);const fetched=[];const newTs={...timestamps};
     const entries=Object.entries(FETCHERS);
     const results=await Promise.allSettled(entries.map(([,fn])=>fn()));
     const newVals={...values};
-    entries.forEach(([id],i)=>{
-      if(results[i].status==="fulfilled"&&results[i].value!=null){
-        newVals[id]=results[i].value.value;
-        fetched.push(id);
-        newTs[id]=fmtDate(results[i].value.asOf);
-      }
-    });
+    entries.forEach(([id],i)=>{if(results[i].status==="fulfilled"&&results[i].value!=null){newVals[id]=results[i].value.value;fetched.push(id);newTs[id]=fmtDate(results[i].value.asOf);}});
     MANUAL_IDS.forEach(id=>{if(!(id in newVals)||newVals[id]===50)newVals[id]=MANUAL_DEFAULTS[id];});
-    setValues(newVals);setAutoFetched(fetched);setTimestamps(newTs);setLoading(false);
-    setLastUpdate(new Date().toLocaleTimeString());
+    setValues(newVals);setAutoFetched(fetched);setTimestamps(newTs);setLoading(false);setLastUpdate(new Date().toLocaleTimeString());
   },[]);
 
   useEffect(()=>{if(!mounted.current){mounted.current=true;fetchAll();}},[fetchAll]);
 
-  const saveSnapshot=async(vals)=>{
-    const snap={timestamp:Date.now(),values:{...vals}};const updated=[snap,...snapshots].slice(0,50);
-    setSnapshots(updated);try{await window.storage.set(STORE_KEY,JSON.stringify(updated));}catch{}
-  };
-  const deleteSnapshot=async(ts)=>{
-    const updated=snapshots.filter(s=>s.timestamp!==ts);
-    setSnapshots(updated);try{await window.storage.set(STORE_KEY,JSON.stringify(updated));}catch{}
-  };
+  const saveSnapshot=async(vals)=>{const snap={timestamp:Date.now(),values:{...vals}};const updated=[snap,...snapshots].slice(0,50);setSnapshots(updated);try{await window.storage.set(STORE_KEY,JSON.stringify(updated));}catch{}};
+  const deleteSnapshot=async(ts)=>{const updated=snapshots.filter(s=>s.timestamp!==ts);setSnapshots(updated);try{await window.storage.set(STORE_KEY,JSON.stringify(updated));}catch{}};
   const loadPreset=(p)=>{setValues({...p.values});setTab("dashboard");};
 
   const tabs=[{id:"dashboard",label:"🌡️ Dashboard"},{id:"history",label:"📜 History"},{id:"snapshots",label:"📸 Snapshots"}];
