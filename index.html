@@ -1,357 +1,1101 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Market Temperature Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:#09090b;color:#e5e5e5;font-family:'IBM Plex Sans',sans-serif;padding:20px 16px;min-height:100vh;}
-.mx{max-width:680px;margin:0 auto;}
-.mono{font-family:'JetBrains Mono',monospace;}
-.tabs{display:flex;gap:4px;margin-bottom:20px;background:#111113;border-radius:12px;padding:4px;}
-.tab-btn{flex:1;padding:10px 0;border-radius:10px;border:none;cursor:pointer;background:transparent;color:#666;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;transition:all 0.2s;}
-.tab-btn.active{background:#1f1f23;color:#fff;}
-.thermo{border-radius:20px;padding:28px 32px;color:#fff;margin-bottom:16px;transition:all 0.4s;}
-.thermo .lbl{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:3px;opacity:0.8;margin-bottom:4px;}
-.thermo .score-row{display:flex;align-items:baseline;gap:16px;}
-.thermo .big{font-size:64px;font-weight:700;line-height:1;}
-.thermo .status{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;letter-spacing:2px;}
-.bar-track{margin-top:12px;height:8px;background:rgba(0,0,0,0.25);border-radius:4px;position:relative;}
-.bar-fill{position:absolute;left:0;top:0;height:100%;background:rgba(255,255,255,0.7);border-radius:4px;transition:width 0.5s;}
-.bar-labels{display:flex;justify-content:space-between;margin-top:6px;font-family:'JetBrains Mono',monospace;font-size:10px;opacity:0.6;letter-spacing:1px;}
-.verdict{margin-top:14px;font-size:14px;font-weight:500;opacity:0.9;}
-.card{background:#111113;border:1px solid #2a2a2f;border-radius:14px;padding:16px 20px;margin-bottom:12px;}
-.ind-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #1a1a1f;flex-wrap:wrap;}
-.ind-row:last-child{border-bottom:none;}
-.badge{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;padding:2px 8px;border-radius:5px;width:88px;text-align:center;flex-shrink:0;}
-.ind-input{width:66px;background:#1a1a1f;border:1px solid #333;border-radius:6px;color:#e5e5e5;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;padding:4px 6px;text-align:right;}
-.btn{background:#1a1a1f;border:1px solid #2a2a2f;border-radius:8px;color:#aaa;cursor:pointer;padding:6px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;}
-.btn:hover{border-color:#444;color:#ccc;}
-.btn:disabled{opacity:0.5;cursor:default;}
-.sim-box{background:#111113;border:1px solid #2a2a2f;border-radius:14px;padding:16px 20px;margin-top:16px;}
-.aftermath-box{background:#0a0a0c;border-radius:10px;padding:14px 16px;margin-top:14px;}
-.aftermath-grid{display:flex;gap:12px;margin-bottom:12px;}
-.aftermath-cell{flex:1;text-align:center;background:#111113;border-radius:8px;padding:10px 4px;}
-.preset-card{background:#111113;border:1px solid #2a2a2f;border-radius:14px;overflow:hidden;margin-bottom:12px;transition:all 0.2s;}
-.preset-card.expanded{border-color:#333;}
-.preset-header{padding:16px 20px;cursor:pointer;}
-.preset-body{padding:0 20px 20px;border-top:1px solid #1a1a1f;}
-.preset-bar{margin-top:10px;height:10px;background:#1a1a1f;border-radius:4px;overflow:hidden;}
-.preset-bar-fill{height:100%;border-radius:4px;transition:width 0.4s;}
-.tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:4px;display:inline-block;margin:2px;}
-.snap-tags{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;}
-.snap-tag{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;border-radius:4px;}
-.action-box{background:#0d1117;border:1px solid #1c2333;border-radius:10px;padding:14px 16px;margin-top:14px;}
-.action-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #111827;}
-.action-item:last-child{border-bottom:none;}
-.action-emoji{font-size:16px;flex-shrink:0;margin-top:2px;}
-.action-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:#cbd5e1;line-height:1.5;}
-.action-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;margin-bottom:8px;}
-.tab-content{display:none;}
-.tab-content.active{display:block;}
-.footer{margin-top:28px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:#2a2a2f;letter-spacing:1px;}
-@media(max-width:500px){.thermo .big{font-size:48px;}.thermo{padding:20px 16px;}.aftermath-grid{flex-direction:column;gap:8px;}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Market Temperature v2</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    :root{
+      --bg:#09090b;
+      --panel:#111113;
+      --panel-2:#0d1117;
+      --border:#23232a;
+      --muted:#777;
+      --text:#e7e7ea;
+      --sub:#a1a1aa;
+      --blue:#2563eb;
+      --sky:#38bdf8;
+      --yellow:#eab308;
+      --orange:#f97316;
+      --red:#dc2626;
+      --green:#22c55e;
+      --radius:16px;
+      --radius-sm:10px;
+      --shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      background:var(--bg);
+      color:var(--text);
+      font-family:'IBM Plex Sans',sans-serif;
+      padding:16px;
+      min-height:100vh;
+    }
+    .wrap{max-width:820px;margin:0 auto}
+    .mono{font-family:'JetBrains Mono',monospace}
+    .muted{color:var(--muted)}
+    .sub{color:var(--sub)}
+    .hidden{display:none!important}
+
+    .tabs{
+      display:flex;gap:6px;background:var(--panel);padding:5px;border-radius:14px;
+      margin-bottom:16px;border:1px solid var(--border);position:sticky;top:12px;z-index:10;
+      backdrop-filter:blur(8px);
+    }
+    .tab-btn{
+      flex:1;border:none;background:transparent;color:#6b7280;border-radius:10px;
+      padding:10px 8px;font-size:11px;font-weight:700;cursor:pointer;
+      font-family:'JetBrains Mono',monospace;transition:.2s;
+    }
+    .tab-btn.active{background:#1b1b21;color:#fff}
+    .tab-panel{display:none}
+    .tab-panel.active{display:block}
+
+    .grid{
+      display:grid;gap:12px;
+      grid-template-columns:1fr;
+    }
+    .two{grid-template-columns:1fr 1fr}
+    .three{grid-template-columns:repeat(3,1fr)}
+
+    .card{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:var(--shadow);
+    }
+    .hero{
+      border-radius:24px;
+      padding:22px;
+      color:#fff;
+      margin-bottom:12px;
+      transition:.25s;
+    }
+
+    .hero-top{
+      display:flex;justify-content:space-between;gap:12px;align-items:flex-start;
+    }
+    .score-row{
+      display:flex;gap:14px;align-items:flex-end;margin-top:8px
+    }
+    .score{
+      font-size:68px;line-height:.9;font-weight:800;letter-spacing:-2px
+    }
+    .regime{
+      font-size:18px;font-weight:700;letter-spacing:1px
+    }
+    .hero-sub{margin-top:10px;font-size:14px;opacity:.95}
+    .bar{
+      height:8px;border-radius:999px;background:rgba(0,0,0,.25);overflow:hidden;margin-top:14px
+    }
+    .bar > div{height:100%;background:rgba(255,255,255,.76);transition:width .35s}
+
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .section-title{
+      font-size:11px;letter-spacing:2px;color:#6b7280;margin-bottom:10px;
+      font-family:'JetBrains Mono',monospace
+    }
+
+    .pill{
+      display:inline-flex;align-items:center;gap:6px;
+      border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;
+      font-family:'JetBrains Mono',monospace;border:1px solid transparent;
+    }
+    .pill.ok{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.18)}
+    .pill.warn{background:rgba(249,115,22,.12);color:#fdba74;border-color:rgba(249,115,22,.18)}
+    .pill.bad{background:rgba(220,38,38,.12);color:#fca5a5;border-color:rgba(220,38,38,.18)}
+    .pill.info{background:rgba(59,130,246,.12);color:#93c5fd;border-color:rgba(59,130,246,.18)}
+
+    .btn{
+      border:1px solid #31313a;background:#17171c;color:#d4d4d8;border-radius:10px;
+      padding:8px 12px;cursor:pointer;font-size:11px;font-weight:700;
+      font-family:'JetBrains Mono',monospace
+    }
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .btn.ghost{background:transparent;color:#a1a1aa}
+
+    .kpi{
+      background:var(--panel-2);
+      border:1px solid #1d2431;border-radius:14px;padding:14px
+    }
+    .kpi .v{font-size:28px;font-weight:800}
+    .kpi .l{font-size:11px;color:#7b8190;letter-spacing:2px;font-family:'JetBrains Mono',monospace}
+    .kpi .s{font-size:12px;color:#aeb6c3;margin-top:5px}
+
+    .action-list,.driver-list,.note-list{display:grid;gap:8px}
+    .action-item,.driver-item,.note-item,.indicator-row,.snap-row,.analog-row{
+      background:#0b0b0e;border:1px solid #1a1a20;border-radius:12px;padding:12px
+    }
+
+    .indicator-row{
+      display:grid;grid-template-columns:24px 100px 1fr auto;gap:10px;align-items:center
+    }
+    .indicator-name{font-size:14px;font-weight:600}
+    .indicator-meta{font-size:10px;color:#64646f;font-family:'JetBrains Mono',monospace}
+    .indicator-value{font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace}
+    .indicator-action{margin-top:6px;font-size:11px;color:#9ca3af}
+    .indicator-line{height:8px;border-radius:999px;background:#17171c;overflow:hidden}
+    .indicator-line > div{height:100%}
+
+    .badge{
+      font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+      padding:4px 8px;border-radius:7px;white-space:nowrap
+    }
+
+    .disclosure{
+      font-size:11px;color:#8b8b94;line-height:1.5
+    }
+
+    .analog-head,.snap-head{
+      display:flex;justify-content:space-between;align-items:flex-start;gap:12px
+    }
+
+    .mini-grid{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px
+    }
+    .mini{
+      text-align:center;background:#111115;border-radius:10px;padding:10px 8px
+    }
+    .mini .t{font-size:10px;color:#6b7280;font-family:'JetBrains Mono',monospace}
+    .mini .v{font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace;margin-top:4px}
+
+    .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+    .tag{
+      font-size:10px;border-radius:6px;padding:4px 7px;font-family:'JetBrains Mono',monospace
+    }
+
+    .chart-card{padding:14px}
+    .chart-wrap{height:280px}
+
+    .footer{
+      margin:18px 0 6px;text-align:center;font-size:10px;color:#444;font-family:'JetBrains Mono',monospace;letter-spacing:1px
+    }
+
+    .empty,.error-box,.loading-box{
+      text-align:center;padding:28px 18px;border-radius:14px;background:#0d0d11;border:1px dashed #262631;color:#8f8f99
+    }
+
+    .status-banner{
+      margin-bottom:12px;padding:10px 12px;border-radius:12px;
+      border:1px solid #2a2f3a;background:#0c1017;font-size:12px;color:#aab4c3
+    }
+
+    details summary{
+      cursor:pointer;list-style:none
+    }
+    details summary::-webkit-details-marker{display:none}
+
+    @media (max-width:700px){
+      .two,.three{grid-template-columns:1fr}
+      .indicator-row{grid-template-columns:24px 1fr auto}
+      .indicator-row .indicator-bar-wrap{grid-column:2 / 4}
+      .score{font-size:54px}
+      .hero{padding:18px}
+    }
+  </style>
 </head>
 <body>
-<div class="mx" id="app">
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('dashboard')">🌡️ Dashboard</button>
-    <button class="tab-btn" onclick="switchTab('history')">📜 History</button>
-    <button class="tab-btn" onclick="switchTab('snapshots')">📸 Snapshots</button>
-  </div>
-  <div id="tab-dashboard" class="tab-content active"></div>
-  <div id="tab-history" class="tab-content"></div>
-  <div id="tab-snapshots" class="tab-content"></div>
-  <div class="footer">NOT FINANCIAL ADVICE</div>
-</div>
-
-<script>
-// ─── DATA ───────────────────────────────────────────────────────
-const INDICATORS=[
-  {id:"vix",name:"VIX",cat:"Sentiment",icon:"⚡",unit:"",thresholds:[{max:12,label:"Complacent",score:85,color:"hot",action:"헤지 비용 최저 → 풋옵션 매수 시작"},{max:18,label:"Calm",score:65,color:"warm",action:"포트폴리오 보호 점검"},{max:25,label:"Cautious",score:40,color:"neutral",action:"현 포지션 유지"},{max:35,label:"Fearful",score:20,color:"cool",action:"워치리스트 종목 분할매수 시작"},{max:1e9,label:"Panic",score:5,color:"cold",action:"공포 극대화 → 우량주 적극 매수 구간"}]},
-  {id:"fearGreed",name:"Fear & Greed",cat:"Sentiment",icon:"🧠",unit:"",thresholds:[{max:20,label:"Extreme Fear",score:5,color:"cold",action:"역발상 매수. 현금 비중 줄이기"},{max:40,label:"Fear",score:25,color:"cool",action:"신규 매수 자세. 리밸런싱 검토"},{max:60,label:"Neutral",score:50,color:"neutral",action:"기존 전략 유지"},{max:80,label:"Greed",score:75,color:"warm",action:"신규 매수 중단. 리밸런싱 검토"},{max:1e9,label:"Extreme Greed",score:95,color:"hot",action:"이익 실현. 현금 비중 확대"}]},
-  {id:"putCall",name:"Put/Call",cat:"Sentiment",icon:"📊",unit:"",thresholds:[{max:0.6,label:"Euphoria",score:90,color:"hot",action:"보수적 포 매수. 콜매도 검토"},{max:0.8,label:"Bullish",score:70,color:"warm",action:"시장 방향성 관망"},{max:1.0,label:"Neutral",score:50,color:"neutral",action:"시장 방향성 관망"},{max:1.2,label:"Cautious",score:30,color:"cool",action:"과도한 헤지 → 역발상 매수 신호"},{max:1e9,label:"Panic Hedge",score:10,color:"cold",action:"Panic Hedge → 역발상 매수 신호"}]},
-  {id:"spPE",name:"S&P P/E",cat:"Valuation",icon:"💰",unit:"x",thresholds:[{max:14,label:"Cheap",score:10,color:"cold",action:"인덱스 비중 확대. 장기투자 적기"},{max:18,label:"Fair",score:30,color:"cool",action:"정상 밸류에이션. 선별적 매수"},{max:22,label:"Rich",score:55,color:"neutral",action:"빠른 대비 성장 확인 후 매수"},{max:28,label:"Expensive",score:75,color:"warm",action:"신규 자금 투입 속도 줄이기"},{max:1e9,label:"Bubble",score:95,color:"hot",action:"위험 자산 축소. 방어주/채권 비중↑"}]},
-  {id:"buffett",name:"Buffett Ind.",cat:"Valuation",icon:"🏛️",unit:"%",thresholds:[{max:70,label:"Deep Value",score:5,color:"cold",action:"올인 구간. 역사적 저평가"},{max:100,label:"Undervalued",score:25,color:"cool",action:"적극 매수. 장기 수익률 기대↑"},{max:130,label:"Fair",score:50,color:"neutral",action:"정상 범위. DCA 지속"},{max:170,label:"Overvalued",score:75,color:"warm",action:"신규 자금 투입 속도 줄이기"},{max:1e9,label:"Extreme",score:95,color:"hot",action:"시장 전체에 브르트포스 인덱스 매수↓"}]},
-  {id:"breadth",name:">200d MA",cat:"Breadth",icon:"📈",unit:"%",thresholds:[{max:15,label:"Capitulation",score:5,color:"cold",action:"소수 종목 의존 체크. 분산 강화"},{max:30,label:"Oversold",score:20,color:"cool",action:"건전한 랠리. 추세 추종"},{max:60,label:"Healthy",score:50,color:"neutral",action:"건전한 랠리. 추세 추종"},{max:80,label:"Extended",score:75,color:"warm",action:"추가 매수 보류. 트레일링 스탑"},{max:1e9,label:"Euphoric",score:92,color:"hot",action:"추가 매수 보류. 트레일링 스탑 설정"}]},
-  {id:"yieldCurve",name:"Yield Curve",cat:"Macro",icon:"📐",unit:"%",thresholds:[{max:-0.5,label:"Deep Inversion",score:80,color:"warm",action:"경기침체 대비. 방어주/채권 비중↑"},{max:0,label:"Inverted",score:65,color:"warm",action:"사이클 후반. 경기민감주 축소"},{max:0.5,label:"Flat",score:45,color:"neutral",action:"현 유보하며 관망"},{max:1.5,label:"Normal",score:30,color:"cool",action:"정상 환경. 주식 비중 유지"},{max:1e9,label:"Steep",score:20,color:"cool",action:"회복 초기. 금융/소형주 매수 유리"}]},
-  {id:"creditSpread",name:"HY Spread",cat:"Macro",icon:"🏦",unit:"%",thresholds:[{max:3,label:"Risk-On",score:80,color:"warm",action:"크레딧 과열. HY채권 축소"},{max:4,label:"Normal",score:50,color:"neutral",action:"정상. 크레딧 포지션 유지"},{max:5.5,label:"Cautious",score:35,color:"cool",action:"스트레스 초기. IG체전으로 이동"},{max:8,label:"Stress",score:15,color:"cold",action:"유동성 확보. 디폴트 위험 모니터링"},{max:1e9,label:"Crisis",score:5,color:"cold",action:"신용 경색. 국채/현금만 보유"}]},
-  {id:"rsi",name:"RSI (14w)",cat:"Technical",icon:"🔄",unit:"",thresholds:[{max:25,label:"Very Oversold",score:5,color:"cold",action:"기술적 반등 임박. 단기 매수"},{max:35,label:"Oversold",score:20,color:"cool",action:"추세 방향 확인 후 행동"},{max:65,label:"Neutral",score:50,color:"neutral",action:"추세 방향 확인 후 행동"},{max:75,label:"Overbought",score:75,color:"warm",action:"추가 매수 보류. 트레일링 스탑"},{max:1e9,label:"V. Overbought",score:95,color:"hot",action:"단기 과열. 부분 익실현"}]},
-  {id:"maDist",name:"Dist 200d MA",cat:"Technical",icon:"📏",unit:"%",thresholds:[{max:-12,label:"Crash",score:3,color:"cold",action:"패닉 셀링 구간. 용기 있는 매수"},{max:-5,label:"Oversold",score:18,color:"cool",action:"200일선 복귀 베팅. 분할매수"},{max:5,label:"Normal",score:45,color:"neutral",action:"정상 범위. 포지션 유지"},{max:12,label:"Extended",score:75,color:"warm",action:"평균 회귀 리스크. 트레일링 스탑 설정"},{max:1e9,label:"Blow-Off",score:95,color:"hot",action:"극단적 괴리. 추격 매수 자제"}]},
-];
-
-const PRESETS=[
-  {id:"black_monday",name:"Black Monday",date:"Oct 1987",emoji:"⬛",desc:"S&P -20.47% in one day",color:"#1e40af",aftermath:{sp_3m:"+15%",sp_6m:"+23%",sp_1y:"+21%",narrative:"V자 반등. 1988년 +12%. 공포가 매수 기회였음."},values:{vix:60,fearGreed:3,putCall:1.5,spPE:14,buffett:55,breadth:10,yieldCurve:0.8,creditSpread:5.0,rsi:15,maDist:-25}},
-  {id:"dotcom_peak",name:"Dot-Com Peak",date:"Mar 2000",emoji:"🫧",desc:"NASDAQ 5,048. CAPE ~44.",color:"#FF2D2D",aftermath:{sp_3m:"-4%",sp_6m:"-7%",sp_1y:"-12%",narrative:"NASDAQ -78%. S&P -49% by Oct 2002. 15년간 전고점 회복 못함."},values:{vix:24,fearGreed:85,putCall:0.55,spPE:44,buffett:146,breadth:65,yieldCurve:-0.2,creditSpread:5.5,rsi:72,maDist:15}},
-  {id:"dotcom_bottom",name:"Dot-Com Bottom",date:"Oct 2002",emoji:"💀",desc:"NASDAQ -78%. Enron, WorldCom.",color:"#2563EB",aftermath:{sp_3m:"+8%",sp_6m:"+14%",sp_1y:"+24%",narrative:"5년 불장 시작. 최악이 최고의 매수 타이밍."},values:{vix:40,fearGreed:10,putCall:1.3,spPE:28,buffett:73,breadth:12,yieldCurve:1.8,creditSpread:10.7,rsi:22,maDist:-30}},
-  {id:"gfc_pre",name:"Pre-GFC Peak",date:"Oct 2007",emoji:"🏠",desc:"Housing bubble top.",color:"#FF8C00",aftermath:{sp_3m:"-10%",sp_6m:"-18%",sp_1y:"-40%",narrative:"S&P 1,565→666. -57%. 회복 5.5년."},values:{vix:16,fearGreed:75,putCall:0.6,spPE:22,buffett:109,breadth:75,yieldCurve:-0.1,creditSpread:2.6,rsi:68,maDist:10}},
-  {id:"gfc_crash",name:"GFC Crash",date:"Nov 2008",emoji:"📉",desc:"Lehman. VIX 80. HY 21.8%.",color:"#1e40af",aftermath:{sp_3m:"-25%",sp_6m:"+1%",sp_1y:"+23%",narrative:"추가 하락 후 2009.3 바닥. 11년 최장 불장 시작."},values:{vix:80,fearGreed:5,putCall:1.6,spPE:13,buffett:57,breadth:5,yieldCurve:1.7,creditSpread:21.8,rsi:18,maDist:-38}},
-  {id:"gfc_bottom",name:"GFC Bottom",date:"Mar 2009",emoji:"🕳️",desc:"S&P 666. Buffett 56%.",color:"#2563EB",aftermath:{sp_3m:"+36%",sp_6m:"+51%",sp_1y:"+68%",narrative:"역사상 최고의 매수 시점. 11년 불장."},values:{vix:50,fearGreed:8,putCall:1.4,spPE:15,buffett:56,breadth:3,yieldCurve:2.0,creditSpread:16.5,rsi:20,maDist:-35}},
-  {id:"covid",name:"COVID Crash",date:"Mar 2020",emoji:"🦠",desc:"VIX ATH 82.69.",color:"#1e40af",aftermath:{sp_3m:"+30%",sp_6m:"+46%",sp_1y:"+75%",narrative:"5개월만에 전고점 돌파. 이후 +100%."},values:{vix:82,fearGreed:2,putCall:1.5,spPE:20,buffett:125,breadth:8,yieldCurve:0.3,creditSpread:10.9,rsi:16,maDist:-30}},
-  {id:"covid_euphoria",name:"Post-COVID Mania",date:"Dec 2021",emoji:"🚀",desc:"Meme stocks. Buffett 190%.",color:"#FF2D2D",aftermath:{sp_3m:"-8%",sp_6m:"-20%",sp_1y:"-19%",narrative:"2022 베어마켓. S&P -25%, NASDAQ -33%."},values:{vix:17,fearGreed:82,putCall:0.55,spPE:29,buffett:190,breadth:70,yieldCurve:0.8,creditSpread:3.0,rsi:70,maDist:12}},
-  {id:"bear_2022",name:"2022 Bear",date:"Oct 2022",emoji:"🐻",desc:"Fed hikes. S&P -25%.",color:"#3BA0D6",aftermath:{sp_3m:"+8%",sp_6m:"+15%",sp_1y:"+21%",narrative:"AI 테마로 3년 연속 강세 (2023-2025)."},values:{vix:33,fearGreed:15,putCall:1.2,spPE:18,buffett:140,breadth:20,yieldCurve:-0.5,creditSpread:5.9,rsi:28,maDist:-15}},
-  {id:"tariff_2025",name:"Tariff Shock",date:"Apr 2025",emoji:"💣",desc:"VIX 52. Liberation Day.",color:"#3BA0D6",aftermath:{sp_3m:"TBD",sp_6m:"TBD",sp_1y:"TBD",narrative:"진행 중. 관세 협상 결과에 따라 결정."},values:{vix:52,fearGreed:4,putCall:1.3,spPE:23,buffett:195,breadth:35,yieldCurve:0.4,creditSpread:4.6,rsi:30,maDist:-10}},
-];
-
-const PLAYBOOK=[
-  {min:0,max:15,zone:"EXTREME FEAR",color:"#2563EB",emoji:"💎",actions:["현금 비중→주식으로 공격적 전환 (70-90% 주식)","우량 대형주 (S&P ETF) 분할매수 시작","공포에 팔지 말 것 — 역사적으로 1년 내 +38% 평균 반등","HY채권 스프레드 확인 후 IG등급 회사채 매수 검토","분할/정기 매도 전략 (커버드콜, 풋매도) 수익률 극대화"]},
-  {min:15,max:35,zone:"OVERSOLD",color:"#38bdf8",emoji:"🔍",actions:["현금 비중 20-30%로 점진적 축소","경기민감 섹터 (금융, 산업재) 비중 확대 검토","포트폴리오 리밸런싱 — 하락한 자산군에 재배분","달러 약세 시 해외 자산 편입 고려"]},
-  {min:35,max:65,zone:"NEUTRAL",color:"#eab308",emoji:"⚖️",actions:["기존 전략·DCA (정기 적립) 계속","포트폴리오 점검 — 목표 비중과의 괴리 확인","개별 종목 펀더멘털 분석에 집중","해외 비율 재점검. 다음 방향성 확인될 때까지 현금 10-20% 유보"]},
-  {min:65,max:85,zone:"OVERHEATED",color:"#f97316",emoji:"🔥",actions:["이익 실현 시작 — 가장 많이 오른 종목부터","현금 비중 25-35%로 확대","성장주 → 가치주/배당주 로테이션","트레일링 스탑 5-10% 설정","신규 매수 중단. 현 포모 마인드"]},
-  {min:85,max:100,zone:"EXTREME GREED",color:"#dc2626",emoji:"🚨",actions:["포트폴리오 30-50% 현금화","방어 섹터 (유틸리티, 헬스케어, 필수소비재) 이동","옵콜선 포토 인버스 ETF로 다운사이드 헤지","장기 국채 (TLT) 비중 확대 — 안전자산 이동","FOMO 경계 → 추격매수는 최악의 선택"]},
-];
-
-const COLORS={hot:{bg:"#FF2D2D",text:"#fff"},warm:{bg:"#FF8C00",text:"#fff"},neutral:{bg:"#E8B931",text:"#1a1a1a"},cool:{bg:"#3BA0D6",text:"#fff"},cold:{bg:"#2563EB",text:"#fff"}};
-
-// ─── STATE ──────────────────────────────────────────────────────
-let state={
-  values:{},timestamps:{},autoFetched:[],loading:false,lastUpdate:null,
-  snapshots:[],expandedPreset:null,activeTab:"dashboard"
-};
-const MANUAL_IDS=["putCall","spPE","buffett","breadth","creditSpread"];
-const MANUAL_DEFAULTS={putCall:0.9,spPE:25,buffett:200,breadth:55,creditSpread:3.5};
-INDICATORS.forEach(ind=>{state.values[ind.id]=MANUAL_DEFAULTS[ind.id]||50;});
-
-// ─── HELPERS ────────────────────────────────────────────────────
-function getScore(ind,val){for(const t of ind.thresholds)if(val<=t.max)return t;return ind.thresholds.at(-1);}
-function composite(vals){return INDICATORS.reduce((s,ind)=>s+getScore(ind,vals[ind.id]).score,0)/INDICATORS.length;}
-function barColor(s){return s<=15?"#2563EB":s<=35?"#38bdf8":s<=65?"#eab308":s<=85?"#f97316":"#dc2626";}
-function thermoStyle(s){
-  if(s<=15)return{label:"EXTREME FEAR",verdict:"Potential buying opportunity",bg:"linear-gradient(135deg,#1e40af,#2563eb,#3b82f6)",glow:"0 0 60px rgba(37,99,235,0.5)"};
-  if(s<=35)return{label:"OVERSOLD",verdict:"Market showing fear — watch for entries",bg:"linear-gradient(135deg,#0284c7,#38bdf8,#67d4fc)",glow:"0 0 40px rgba(56,189,248,0.4)"};
-  if(s<=65)return{label:"NEUTRAL",verdict:"Balanced — stay the course",bg:"linear-gradient(135deg,#a16207,#eab308,#fbbf24)",glow:"0 0 40px rgba(234,179,8,0.4)"};
-  if(s<=85)return{label:"OVERHEATED",verdict:"Running hot — consider trimming",bg:"linear-gradient(135deg,#c2410c,#f97316,#fb923c)",glow:"0 0 40px rgba(249,115,22,0.4)"};
-  return{label:"EXTREME GREED",verdict:"Danger zone — de-risk",bg:"linear-gradient(135deg,#991b1b,#dc2626,#f87171)",glow:"0 0 60px rgba(220,38,38,0.5)"};
-}
-function similarity(a,b){
-  const norm=(ind,val)=>{const sc=ind.thresholds.map(t=>t.score);const mn=Math.min(...sc),mx=Math.max(...sc);return(getScore(ind,val).score-mn)/(mx-mn||1);};
-  let dot=0,mA=0,mB=0;
-  INDICATORS.forEach(ind=>{const na=norm(ind,a[ind.id]||0),nb=norm(ind,b[ind.id]||0);dot+=na*nb;mA+=na*na;mB+=nb*nb;});
-  return mA&&mB?dot/(Math.sqrt(mA)*Math.sqrt(mB)):0;
-}
-function findSimilar(vals){let best=null,bs=0;PRESETS.forEach(p=>{const s=similarity(vals,p.values);if(s>bs){bs=s;best=p;}});return{preset:best,sim:bs};}
-function fmtDate(d){if(!d)return"";return d.toLocaleDateString("en-US",{month:"short",day:"numeric"})+" "+d.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"});}
-function getPlaybook(score){for(const p of PLAYBOOK)if(score>=p.min&&score<p.max)return p;return PLAYBOOK.at(-1);}
-function fmtNum(v,u){return typeof v==="number"?(Number.isInteger(v)?v:v.toFixed(1))+u:"-";}
-
-// ─── FETCHERS ───────────────────────────────────────────────────
-async function fetchVIX(){try{const r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?range=1d&interval=1d");const d=await r.json();return{value:d.chart.result[0].meta.regularMarketPrice,asOf:new Date(d.chart.result[0].meta.regularMarketTime*1000)};}catch{return null;}}
-async function fetchFG(){try{const r=await fetch("https://production.dataviz.cnn.io/index/fearandgreed/graphdata");const d=await r.json();return{value:Math.round(d.fear_and_greed.score),asOf:new Date(d.fear_and_greed.timestamp)};}catch{return null;}}
-async function fetchRSI(){try{const r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1mo&interval=1d");const d=await r.json();const ts=d.chart.result[0].timestamp;const c=d.chart.result[0].indicators.quote[0].close.filter(v=>v!=null);if(c.length<15)return null;let g=0,l=0;for(let i=c.length-14;i<c.length;i++){const df=c[i]-c[i-1];if(df>0)g+=df;else l-=df;}return{value:Math.round(100-100/(1+(g/14)/(l/14||.001))),asOf:new Date(ts.at(-1)*1000)};}catch{return null;}}
-async function fetchMA(){try{const r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1y&interval=1d");const d=await r.json();const ts=d.chart.result[0].timestamp;const c=d.chart.result[0].indicators.quote[0].close.filter(v=>v!=null);const cur=c.at(-1),sma=c.slice(-200).reduce((a,b)=>a+b,0)/Math.min(c.length,200);return{value:Math.round(((cur-sma)/sma)*1000)/10,asOf:new Date(ts.at(-1)*1000)};}catch{return null;}}
-async function fetchYC(){try{const[r10,r2]=await Promise.all([fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?range=1d&interval=1d"),fetch("https://query1.finance.yahoo.com/v8/finance/chart/2YY%3DF?range=1d&interval=1d")]);const d10=await r10.json(),d2=await r2.json();return{value:Math.round((d10.chart.result[0].meta.regularMarketPrice-d2.chart.result[0].meta.regularMarketPrice)*100)/100,asOf:new Date(d10.chart.result[0].meta.regularMarketTime*1000)};}catch{return null;}}
-const FETCHERS={vix:fetchVIX,fearGreed:fetchFG,rsi:fetchRSI,maDist:fetchMA,yieldCurve:fetchYC};
-
-async function fetchAll(){
-  state.loading=true;render();
-  const entries=Object.entries(FETCHERS);
-  const results=await Promise.allSettled(entries.map(([,fn])=>fn()));
-  const fetched=[];
-  entries.forEach(([id],i)=>{
-    if(results[i].status==="fulfilled"&&results[i].value!=null){
-      state.values[id]=results[i].value.value;
-      state.timestamps[id]=fmtDate(results[i].value.asOf);
-      fetched.push(id);
-    }
-  });
-  MANUAL_IDS.forEach(id=>{if(state.values[id]===50)state.values[id]=MANUAL_DEFAULTS[id];});
-  state.autoFetched=fetched;state.loading=false;
-  state.lastUpdate=new Date().toLocaleTimeString();
-  render();
-}
-
-// ─── STORAGE ────────────────────────────────────────────────────
-const SK="mkt-temp-snaps";
-function loadSnaps(){try{const d=localStorage.getItem(SK);if(d)state.snapshots=JSON.parse(d);}catch{}}
-function saveSnaps(){try{localStorage.setItem(SK,JSON.stringify(state.snapshots));}catch{}}
-function addSnap(){const s={timestamp:Date.now(),values:{...state.values}};state.snapshots.unshift(s);state.snapshots=state.snapshots.slice(0,50);saveSnaps();render();}
-function delSnap(ts){state.snapshots=state.snapshots.filter(s=>s.timestamp!==ts);saveSnaps();render();}
-
-// ─── RENDER ─────────────────────────────────────────────────────
-function switchTab(id){
-  state.activeTab=id;
-  document.querySelectorAll(".tab-btn").forEach((b,i)=>b.classList.toggle("active",["dashboard","history","snapshots"][i]===id));
-  document.querySelectorAll(".tab-content").forEach(el=>el.classList.remove("active"));
-  document.getElementById("tab-"+id).classList.add("active");
-  render();
-}
-
-function updateVal(id,v){if(!isNaN(v)){state.values[id]=v;render();}}
-function loadPreset(p){state.values={...p.values};state.timestamps={};state.autoFetched=[];switchTab("dashboard");}
-function togglePreset(id){state.expandedPreset=state.expandedPreset===id?null:id;render();}
-
-function render(){
-  const score=composite(state.values);
-  if(state.activeTab==="dashboard")renderDashboard(score);
-  if(state.activeTab==="history")renderHistory(score);
-  if(state.activeTab==="snapshots")renderSnapshots(score);
-}
-
-function renderDashboard(score){
-  const t=thermoStyle(score);const s=Math.max(0,Math.min(100,score));
-  const sim=findSimilar(state.values);const p=sim.preset;const pct=Math.round(sim.sim*100);
-  const pb=getPlaybook(score);
-  const a=p?.aftermath;
-
-  let html=`
-  <div class="thermo" style="background:${t.bg};box-shadow:${t.glow}">
-    <div class="lbl">${state.lastUpdate?`LIVE · ${state.lastUpdate}`:"COMPOSITE MARKET TEMPERATURE"}</div>
-    <div class="score-row"><span class="big">${Math.round(s)}</span><span class="status">${t.label}</span></div>
-    <div class="bar-track"><div class="bar-fill" style="width:${s}%"></div></div>
-    <div class="bar-labels"><span>🥶 OVERSOLD</span><span>🔥 OVERHEATED</span></div>
-    <div class="verdict">→ ${t.verdict}</div>
-  </div>`;
-
-  // Action playbook
-  html+=`<div class="action-box">
-    <div class="action-label" style="color:${pb.color}">${pb.emoji} ${pb.zone} — ACTION PLAYBOOK</div>
-    ${pb.actions.map(a=>`<div class="action-item"><span class="action-emoji">→</span><span class="action-text">${a}</span></div>`).join("")}
-  </div>`;
-
-  // Similarity
-  if(p){
-    html+=`<div class="sim-box">
-      <div style="display:flex;align-items:center;gap:16px">
-        <span style="font-size:28px">${p.emoji}</span>
-        <div style="flex:1">
-          <div class="mono" style="font-size:11px;color:#888;letter-spacing:1px">MOST SIMILAR TO</div>
-          <div style="font-size:16px;font-weight:700">${p.name} <span style="color:#666;font-weight:400">(${p.date})</span></div>
-          <div class="mono" style="font-size:12px;color:${pct>85?"#f87171":pct>70?"#fbbf24":"#38bdf8"};font-weight:600">${pct}% similarity</div>
-        </div>
-      </div>`;
-    if(a){
-      html+=`<div class="aftermath-box">
-        <div class="mono" style="font-size:10px;color:#555;letter-spacing:2px;margin-bottom:10px">📉 WHAT HAPPENED NEXT</div>
-        <div class="aftermath-grid">
-          ${[{l:"3M",v:a.sp_3m},{l:"6M",v:a.sp_6m},{l:"1Y",v:a.sp_1y}].map(({l,v})=>`
-            <div class="aftermath-cell">
-              <div class="mono" style="font-size:10px;color:#555;margin-bottom:4px">${l}</div>
-              <div class="mono" style="font-size:18px;font-weight:700;color:${v==="TBD"?"#555":v.startsWith("+")?"#22c55e":"#ef4444"}">${v}</div>
-            </div>`).join("")}
-        </div>
-        <div class="mono" style="font-size:11px;color:#888;line-height:1.5">${a.narrative}</div>
-      </div>`;
-    }
-    html+=`</div>`;
-  }
-
-  // Indicators
-  html+=`<div class="card" style="margin-top:16px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <span class="mono" style="font-size:11px;color:#444;letter-spacing:3px">INDICATORS</span>
-      <button class="btn" onclick="fetchAll()" ${state.loading?"disabled":""}>${state.loading?"⏳ Fetching...":"🔄 Refresh Live Data"}</button>
-    </div>`;
-  INDICATORS.forEach(ind=>{
-    const r=getScore(ind,state.values[ind.id]);const c=COLORS[r.color];const isManual=MANUAL_IDS.includes(ind.id);
-    const ts=state.timestamps[ind.id];const live=state.autoFetched.includes(ind.id);
-    html+=`<div class="ind-row">
-      <span class="mono" style="font-size:12px;color:#666;width:22px">${ind.icon}</span>
-      <span style="font-size:14px;font-weight:600;width:95px;flex-shrink:0">${ind.name}</span>
-      <span class="badge" style="background:${c.bg};color:${c.text}">${r.label}</span>
-      <input class="ind-input" type="number" value="${state.values[ind.id]}" step="any" onchange="updateVal('${ind.id}',parseFloat(this.value))">
-      <span class="mono" style="font-size:11px;color:#555;width:14px">${ind.unit}</span>
-      <span class="mono" style="font-size:9px;color:${isManual?"#665500":live?"#2a6":"#444"};margin-left:auto">${isManual?"✏️ manual":live?`✓ ${ts||"live"}`:"—"}</span>
+  <div class="wrap">
+    <div class="tabs" id="tabs">
+      <button class="tab-btn active" data-tab="dash">🌡️ Dashboard</button>
+      <button class="tab-btn" data-tab="history">📜 History</button>
+      <button class="tab-btn" data-tab="charts">📊 Charts</button>
+      <button class="tab-btn" data-tab="snaps">📸 Snapshots</button>
     </div>
-    <div style="padding:0 0 6px 34px"><span class="mono" style="font-size:9px;color:#444">→ ${r.action}</span></div>`;
-  });
-  html+=`</div>`;
 
-  document.getElementById("tab-dashboard").innerHTML=html;
-}
+    <div id="app-status"></div>
 
-function renderHistory(){
-  let html=`<div class="mono" style="font-size:11px;color:#444;letter-spacing:3px;padding-left:4px;margin-bottom:12px">HISTORICAL SCENARIOS</div>`;
-  PRESETS.forEach(p=>{
-    const s=Math.round(composite(p.values));const bc=barColor(s);
-    const sim=Math.round(similarity(state.values,p.values)*100);
-    const exp=state.expandedPreset===p.id;const a=p.aftermath;
-    html+=`<div class="preset-card ${exp?"expanded":""}">
-      <div class="preset-header" onclick="togglePreset('${p.id}')">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="display:flex;align-items:center;gap:12px">
-            <span style="font-size:24px">${p.emoji}</span>
-            <div>
-              <div style="font-size:15px;font-weight:700">${p.name}</div>
-              <div class="mono" style="font-size:11px;color:#666">${p.date} · ${p.desc}</div>
+    <section id="tab-dash" class="tab-panel active"></section>
+    <section id="tab-history" class="tab-panel"></section>
+    <section id="tab-charts" class="tab-panel"></section>
+    <section id="tab-snaps" class="tab-panel"></section>
+
+    <div class="footer">NOT FINANCIAL ADVICE · EDUCATIONAL DASHBOARD</div>
+  </div>
+
+  <script>
+    const INDICATORS = [
+      {
+        id:"vix", name:"VIX", icon:"⚡", unit:"",
+        min:10, max:85, inverse:true,
+        thresholds:[
+          { mx:12, label:"Complacent", score:85, color:"hot", action:"Cheap hedges; review protection." },
+          { mx:18, label:"Calm", score:65, color:"warm", action:"Check portfolio protection." },
+          { mx:25, label:"Cautious", score:40, color:"neutral", action:"Hold base positioning." },
+          { mx:35, label:"Fearful", score:20, color:"cool", action:"Start scaling into watchlist." },
+          { mx:1e9, label:"Panic", score:5, color:"cold", action:"Panic can create strong entry points." }
+        ]
+      },
+      {
+        id:"fearGreed", name:"Fear & Greed", icon:"🧠", unit:"",
+        min:0, max:100, inverse:false,
+        thresholds:[
+          { mx:20, label:"Extreme Fear", score:5, color:"cold", action:"Contrarian accumulation zone." },
+          { mx:40, label:"Fear", score:25, color:"cool", action:"Lean into selective buying." },
+          { mx:60, label:"Neutral", score:50, color:"neutral", action:"Maintain current plan." },
+          { mx:80, label:"Greed", score:75, color:"warm", action:"Pause aggressive new buying." },
+          { mx:1e9, label:"Extreme Greed", score:95, color:"hot", action:"Trim risk; raise cash." }
+        ]
+      },
+      {
+        id:"rsi", name:"RSI 14d", icon:"🔄", unit:"",
+        min:15, max:85, inverse:false,
+        thresholds:[
+          { mx:25, label:"Very Oversold", score:5, color:"cold", action:"Technical bounce odds improving." },
+          { mx:35, label:"Oversold", score:20, color:"cool", action:"Wait for confirmation; start planning." },
+          { mx:65, label:"Neutral", score:50, color:"neutral", action:"Follow broader trend." },
+          { mx:75, label:"Overbought", score:75, color:"warm", action:"Avoid chasing." },
+          { mx:1e9, label:"Very Overbought", score:95, color:"hot", action:"Consider partial profit-taking." }
+        ]
+      },
+      {
+        id:"maDist", name:"Dist 200d MA", icon:"📏", unit:"%",
+        min:-35, max:18, inverse:false,
+        thresholds:[
+          { mx:-12, label:"Crash", score:3, color:"cold", action:"Deep dislocation; scale into quality." },
+          { mx:-5, label:"Oversold", score:18, color:"cool", action:"Mean-reversion zone." },
+          { mx:5, label:"Normal", score:45, color:"neutral", action:"Keep core positions." },
+          { mx:12, label:"Extended", score:75, color:"warm", action:"Set tighter stops." },
+          { mx:1e9, label:"Blow-Off", score:95, color:"hot", action:"Do not chase extremes." }
+        ]
+      },
+      {
+        id:"yieldCurve", name:"10Y-2Y", icon:"📐", unit:"%",
+        min:-1, max:2.2, inverse:true,
+        thresholds:[
+          { mx:-0.5, label:"Deep Inversion", score:80, color:"warm", action:"Late-cycle caution; stay selective." },
+          { mx:0, label:"Inverted", score:65, color:"warm", action:"Reduce cyclical exposure." },
+          { mx:0.5, label:"Flat", score:45, color:"neutral", action:"Stay balanced." },
+          { mx:1.5, label:"Normal", score:30, color:"cool", action:"Risk environment normalizing." },
+          { mx:1e9, label:"Steep", score:20, color:"cool", action:"Recovery-style backdrop possible." }
+        ]
+      },
+      {
+        id:"sp500Change", name:"S&P YTD", icon:"📈", unit:"%",
+        min:-25, max:30, inverse:false,
+        thresholds:[
+          { mx:-20, label:"Bear", score:5, color:"cold", action:"Deep drawdowns can create opportunity." },
+          { mx:-10, label:"Correction", score:20, color:"cool", action:"Build watchlist; buy in tranches." },
+          { mx:5, label:"Flat", score:45, color:"neutral", action:"Wait for clearer trend." },
+          { mx:15, label:"Bull", score:70, color:"warm", action:"Trend is healthy; trim into strength." },
+          { mx:1e9, label:"Euphoria", score:92, color:"hot", action:"Increase cash; manage FOMO." }
+        ]
+      }
+    ];
+
+    const PRESETS = [
+      {id:"bm87",n:"Black Monday",d:"Oct 1987",e:"⬛",desc:"S&P -20% in one day",c:"#1e40af",af:{m3:"+15%",m6:"+23%",y1:"+21%",n:"Sharp panic followed by strong rebound."},v:{vix:60,fearGreed:3,rsi:15,maDist:-25,yieldCurve:0.8,sp500Change:-20}},
+      {id:"dc00",n:"Dot-Com Peak",d:"Mar 2000",e:"🫧",desc:"Tech euphoria peak",c:"#ef4444",af:{m3:"-4%",m6:"-7%",y1:"-12%",n:"High valuation peaks can unwind for longer than expected."},v:{vix:24,fearGreed:85,rsi:72,maDist:15,yieldCurve:-0.2,sp500Change:7}},
+      {id:"dc02",n:"Dot-Com Bottom",d:"Oct 2002",e:"💀",desc:"Deep tech bust low",c:"#2563eb",af:{m3:"+8%",m6:"+14%",y1:"+24%",n:"Severe fear eventually turned into a multi-year recovery."},v:{vix:40,fearGreed:10,rsi:22,maDist:-30,yieldCurve:1.8,sp500Change:-23}},
+      {id:"gfc07",n:"Pre-GFC Peak",d:"Oct 2007",e:"🏠",desc:"Late-cycle housing peak",c:"#fb923c",af:{m3:"-10%",m6:"-18%",y1:"-40%",n:"A warm-looking tape can still hide major macro risk."},v:{vix:16,fearGreed:75,rsi:68,maDist:10,yieldCurve:-0.1,sp500Change:8}},
+      {id:"gfc08",n:"GFC Crash",d:"Nov 2008",e:"📉",desc:"Lehman aftermath",c:"#1e40af",af:{m3:"-25%",m6:"+1%",y1:"+23%",n:"Capitulation can still see more downside before recovery."},v:{vix:80,fearGreed:5,rsi:18,maDist:-38,yieldCurve:1.7,sp500Change:-38}},
+      {id:"gfc09",n:"GFC Bottom",d:"Mar 2009",e:"🕳️",desc:"S&P 666 low",c:"#2563eb",af:{m3:"+36%",m6:"+51%",y1:"+68%",n:"One of the strongest long-term entry points in modern history."},v:{vix:50,fearGreed:8,rsi:20,maDist:-35,yieldCurve:2.0,sp500Change:-25}},
+      {id:"cv20",n:"COVID Crash",d:"Mar 2020",e:"🦠",desc:"Pandemic liquidation",c:"#1e40af",af:{m3:"+30%",m6:"+46%",y1:"+75%",n:"Fast panic, faster rebound once policy support landed."},v:{vix:82,fearGreed:2,rsi:16,maDist:-30,yieldCurve:0.3,sp500Change:-24}},
+      {id:"cv21",n:"Post-COVID Mania",d:"Dec 2021",e:"🚀",desc:"Peak speculative appetite",c:"#ef4444",af:{m3:"-8%",m6:"-20%",y1:"-19%",n:"Late-stage greed often leads to painful resets."},v:{vix:17,fearGreed:82,rsi:70,maDist:12,yieldCurve:0.8,sp500Change:27}},
+      {id:"br22",n:"2022 Bear",d:"Oct 2022",e:"🐻",desc:"Rate-shock bear low",c:"#38bdf8",af:{m3:"+8%",m6:"+15%",y1:"+21%",n:"Deep fear became a better medium-term setup."},v:{vix:33,fearGreed:15,rsi:28,maDist:-15,yieldCurve:-0.5,sp500Change:-19}},
+      {id:"tf25",n:"Tariff Shock",d:"Apr 2025",e:"💣",desc:"Tariff-driven volatility",c:"#38bdf8",af:{m3:"TBD",m6:"TBD",y1:"TBD",n:"Still unfolding; use cautiously as an analog."},v:{vix:52,fearGreed:4,rsi:30,maDist:-10,yieldCurve:0.4,sp500Change:-10}}
+    ];
+
+    const PLAYBOOK = [
+      {min:0,max:15,label:"EXTREME FEAR",emoji:"💎",color:"#2563eb",actions:["Shift toward offense in tranches.","Buy quality first, beta second.","Ignore panic headlines; focus on sizing."]},
+      {min:15,max:35,label:"OVERSOLD",emoji:"🔍",color:"#38bdf8",actions:["Add selectively on weakness.","Favor leaders and resilient balance sheets.","Rebalance toward target risk."]},
+      {min:35,max:65,label:"NEUTRAL",emoji:"⚖️",color:"#eab308",actions:["Keep DCA or base plan running.","Avoid overreacting to noise.","Wait for better asymmetry."]},
+      {min:65,max:85,label:"OVERHEATED",emoji:"🔥",color:"#f97316",actions:["Trim winners gradually.","Raise some dry powder.","Tighten stops and avoid chase entries."]},
+      {min:85,max:101,label:"EXTREME GREED",emoji:"🚨",color:"#dc2626",actions:["De-risk aggressively.","Reduce speculative exposure.","Treat FOMO as a warning sign."]}
+    ];
+
+    const VIX_HIST = [
+      {d:"1987-10",v:60,l:"Black Monday"},{d:"1998-10",v:45,l:"LTCM"},{d:"2001-09",v:43,l:"9/11"},
+      {d:"2002-07",v:45,l:"Dot-Com"},{d:"2008-11",v:80,l:"GFC"},{d:"2009-03",v:50,l:"GFC Bottom"},
+      {d:"2010-05",v:45,l:"Flash Crash"},{d:"2011-08",v:48,l:"EU Crisis"},{d:"2015-08",v:40,l:"China Deval"},
+      {d:"2018-02",v:37,l:"Volmageddon"},{d:"2020-03",v:82,l:"COVID"},{d:"2022-01",v:31,l:"Rate Hikes"},
+      {d:"2024-08",v:38,l:"Carry Unwind"},{d:"2025-04",v:52,l:"Tariffs"}
+    ];
+
+    const FG_HIST = [
+      {d:"2020-03",v:2,l:"COVID"},{d:"2020-11",v:88,l:"Vaccine"},{d:"2021-02",v:78,l:"Meme Mania"},
+      {d:"2021-12",v:82,l:"Peak Euphoria"},{d:"2022-06",v:13,l:"Rate Shock"},{d:"2022-10",v:15,l:"Bear Bottom"},
+      {d:"2023-07",v:82,l:"AI Rally"},{d:"2024-03",v:76,l:"ATH"},{d:"2024-08",v:17,l:"Carry Crash"},
+      {d:"2025-02",v:72,l:"Pre-Tariff"},{d:"2025-04",v:4,l:"Liberation Day"}
+    ];
+
+    const COLORS = {
+      hot:{bg:"#dc2626",tx:"#fff"},
+      warm:{bg:"#f97316",tx:"#fff"},
+      neutral:{bg:"#eab308",tx:"#1a1a1a"},
+      cool:{bg:"#38bdf8",tx:"#fff"},
+      cold:{bg:"#2563eb",tx:"#fff"}
+    };
+
+    const STORAGE_KEY = "market-temp-v2-snaps";
+
+    const state = {
+      tab:"dash",
+      values:Object.fromEntries(INDICATORS.map(i => [i.id, null])),
+      timestamps:{},
+      status:Object.fromEntries(INDICATORS.map(i => [i.id, "idle"])),
+      errors:{},
+      lastUpdated:null,
+      loading:false,
+      snapshots:[],
+      expandedPreset:null,
+      charts:{},
+      prevComposite:null
+    };
+
+    function init(){
+      bindTabs();
+      loadSnapshots();
+      renderAll();
+      fetchAll();
+      setInterval(fetchAll, 300000);
+    }
+
+    function bindTabs(){
+      document.querySelectorAll(".tab-btn").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const tab = btn.dataset.tab;
+          state.tab = tab;
+          document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active", b===btn));
+          document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
+          document.getElementById("tab-"+tab).classList.add("active");
+          renderAll();
+          if(tab==="charts") setTimeout(renderCharts, 30);
+        });
+      });
+    }
+
+    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+    function fmtNum(v, unit=""){
+      if(v === null || v === undefined || Number.isNaN(v)) return "—";
+      const out = Number.isInteger(v) ? v : v.toFixed(1);
+      return `${out}${unit}`;
+    }
+    function fmtDate(d){
+      if(!d) return "—";
+      return new Date(d).toLocaleString("en-US", {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"});
+    }
+    function timeAgo(d){
+      if(!d) return "—";
+      const mins = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
+      if(mins < 1) return "just now";
+      if(mins < 60) return `${mins}m ago`;
+      const hrs = Math.floor(mins/60);
+      if(hrs < 24) return `${hrs}h ago`;
+      const days = Math.floor(hrs/24);
+      return `${days}d ago`;
+    }
+
+    function getThreshold(ind, val){
+      if(val === null || val === undefined || Number.isNaN(val)) return null;
+      for(const t of ind.thresholds) if(val <= t.mx) return t;
+      return ind.thresholds[ind.thresholds.length - 1];
+    }
+
+    function normalizedRaw(ind, val){
+      if(val === null || val === undefined || Number.isNaN(val)) return null;
+      const scaled = ((val - ind.min) / (ind.max - ind.min)) * 100;
+      const clamped = clamp(scaled, 0, 100);
+      return ind.inverse ? 100 - clamped : clamped;
+    }
+
+    function normalizedBucket(ind, val){
+      const th = getThreshold(ind, val);
+      return th ? th.score : null;
+    }
+
+    function composite(values){
+      const arr = INDICATORS
+        .map(ind => normalizedBucket(ind, values[ind.id]))
+        .filter(v => v !== null);
+      if(!arr.length) return null;
+      return arr.reduce((a,b)=>a+b,0)/arr.length;
+    }
+
+    function regime(score){
+      if(score === null) return {
+        label:"NO DATA", view:"Waiting for live inputs", grad:"linear-gradient(135deg,#27272a,#3f3f46)", glow:"0 0 0 rgba(0,0,0,0)"
+      };
+      if(score<=15) return {label:"EXTREME FEAR", view:"Potential buying opportunity", grad:"linear-gradient(135deg,#1e40af,#2563eb,#3b82f6)", glow:"0 0 60px rgba(37,99,235,.40)"};
+      if(score<=35) return {label:"OVERSOLD", view:"Fear is elevated; watch entries", grad:"linear-gradient(135deg,#0369a1,#38bdf8,#67e8f9)", glow:"0 0 40px rgba(56,189,248,.35)"};
+      if(score<=65) return {label:"NEUTRAL", view:"Balanced backdrop; follow process", grad:"linear-gradient(135deg,#a16207,#eab308,#fcd34d)", glow:"0 0 40px rgba(234,179,8,.35)"};
+      if(score<=85) return {label:"OVERHEATED", view:"Running hot; trim into strength", grad:"linear-gradient(135deg,#c2410c,#f97316,#fdba74)", glow:"0 0 40px rgba(249,115,22,.35)"};
+      return {label:"EXTREME GREED", view:"Danger zone; de-risk", grad:"linear-gradient(135deg,#991b1b,#dc2626,#f87171)", glow:"0 0 60px rgba(220,38,38,.45)"};
+    }
+
+    function scoreColor(score){
+      if(score === null) return "#71717a";
+      if(score<=15) return "#2563eb";
+      if(score<=35) return "#38bdf8";
+      if(score<=65) return "#eab308";
+      if(score<=85) return "#f97316";
+      return "#dc2626";
+    }
+
+    function getPlaybook(score){
+      if(score === null) return null;
+      return PLAYBOOK.find(p => score >= p.min && score < p.max) || PLAYBOOK[PLAYBOOK.length - 1];
+    }
+
+    function cosineSimilarity(a, b){
+      let dot=0, ma=0, mb=0;
+      for(const ind of INDICATORS){
+        const va = normalizedRaw(ind, a[ind.id]);
+        const vb = normalizedRaw(ind, b[ind.id]);
+        if(va === null || vb === null) continue;
+        dot += va * vb;
+        ma += va * va;
+        mb += vb * vb;
+      }
+      return ma && mb ? dot / (Math.sqrt(ma) * Math.sqrt(mb)) : 0;
+    }
+
+    function topAnalogs(values, limit=3){
+      return PRESETS
+        .map(p => ({...p, sim: cosineSimilarity(values, p.v)}))
+        .sort((a,b)=>b.sim-a.sim)
+        .slice(0, limit);
+    }
+
+    function deltaText(cur, prev){
+      if(cur === null || prev === null || prev === undefined) return "—";
+      const d = cur - prev;
+      const sign = d > 0 ? "+" : "";
+      return `${sign}${d.toFixed(1)}`;
+    }
+
+    function contributionBreakdown(values){
+      return INDICATORS.map(ind=>{
+        const bucket = normalizedBucket(ind, values[ind.id]);
+        return { ind, score: bucket };
+      }).filter(x=>x.score !== null)
+        .sort((a,b)=>Math.abs(b.score - 50) - Math.abs(a.score - 50));
+    }
+
+    function staleLevel(){
+      if(!state.lastUpdated) return "bad";
+      const mins = Math.floor((Date.now() - new Date(state.lastUpdated).getTime()) / 60000);
+      if(mins <= 10) return "ok";
+      if(mins <= 30) return "warn";
+      return "bad";
+    }
+
+    function loadSnapshots(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        state.snapshots = raw ? JSON.parse(raw) : [];
+      }catch{
+        state.snapshots = [];
+      }
+    }
+
+    function saveSnapshots(){
+      try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.snapshots.slice(0,50)));
+      }catch{}
+    }
+
+    function snapshotNow(){
+      const score = composite(state.values);
+      state.snapshots.unshift({
+        t: Date.now(),
+        values: structuredClone(state.values),
+        score
+      });
+      state.snapshots = state.snapshots.slice(0,50);
+      saveSnapshots();
+      renderSnapshots();
+    }
+
+    async function fetchJson(url, timeout=8000){
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeout);
+      try{
+        const res = await fetch(url, {signal: controller.signal});
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function fetchVIX(){
+      const d = await fetchJson("https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?range=1d&interval=1d");
+      return {
+        value: d.chart.result[0].meta.regularMarketPrice,
+        time: new Date(d.chart.result[0].meta.regularMarketTime * 1000).toISOString()
+      };
+    }
+
+    async function fetchFearGreed(){
+      const d = await fetchJson("https://production.dataviz.cnn.io/index/fearandgreed/graphdata");
+      return {
+        value: Math.round(d.fear_and_greed.score),
+        time: new Date(d.fear_and_greed.timestamp).toISOString()
+      };
+    }
+
+    async function fetchRSI(){
+      const d = await fetchJson("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=2mo&interval=1d");
+      const closes = d.chart.result[0].indicators.quote[0].close.filter(v => v != null);
+      const ts = d.chart.result[0].timestamp;
+      if(closes.length < 15) throw new Error("Not enough closes");
+      let gains = 0, losses = 0;
+      for(let i = closes.length - 14; i < closes.length; i++){
+        const diff = closes[i] - closes[i - 1];
+        if(diff > 0) gains += diff;
+        else losses -= diff;
+      }
+      const avgGain = gains / 14;
+      const avgLoss = losses / 14 || 0.001;
+      const rsi = 100 - (100 / (1 + (avgGain / avgLoss)));
+      return {
+        value: Math.round(rsi),
+        time: new Date(ts.at(-1) * 1000).toISOString()
+      };
+    }
+
+    async function fetchMADist(){
+      const d = await fetchJson("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1y&interval=1d");
+      const closes = d.chart.result[0].indicators.quote[0].close.filter(v => v != null);
+      const ts = d.chart.result[0].timestamp;
+      if(!closes.length) throw new Error("No close data");
+      const cur = closes.at(-1);
+      const sma = closes.slice(-200).reduce((a,b)=>a+b,0) / Math.min(closes.length, 200);
+      const dist = ((cur - sma) / sma) * 100;
+      return {
+        value: Math.round(dist * 10) / 10,
+        time: new Date(ts.at(-1) * 1000).toISOString()
+      };
+    }
+
+    async function fetchYieldCurve(){
+      const [d10, d2] = await Promise.all([
+        fetchJson("https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?range=1d&interval=1d"),
+        fetchJson("https://query1.finance.yahoo.com/v8/finance/chart/2YY%3DF?range=1d&interval=1d")
+      ]);
+      const v10 = d10.chart.result[0].meta.regularMarketPrice;
+      const v2 = d2.chart.result[0].meta.regularMarketPrice;
+      return {
+        value: Math.round((v10 - v2) * 100) / 100,
+        time: new Date(d10.chart.result[0].meta.regularMarketTime * 1000).toISOString()
+      };
+    }
+
+    async function fetchSPYTD(){
+      const d = await fetchJson("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=ytd&interval=1d");
+      const closes = d.chart.result[0].indicators.quote[0].close.filter(v => v != null);
+      const ts = d.chart.result[0].timestamp;
+      if(closes.length < 2) throw new Error("Not enough closes");
+      const first = closes[0];
+      const last = closes.at(-1);
+      const pct = ((last - first) / first) * 100;
+      return {
+        value: Math.round(pct * 10) / 10,
+        time: new Date(ts.at(-1) * 1000).toISOString()
+      };
+    }
+
+    const FETCHERS = {
+      vix: fetchVIX,
+      fearGreed: fetchFearGreed,
+      rsi: fetchRSI,
+      maDist: fetchMADist,
+      yieldCurve: fetchYieldCurve,
+      sp500Change: fetchSPYTD
+    };
+
+    async function fetchAll(){
+      state.loading = true;
+      renderStatus();
+      const prevComposite = composite(state.values);
+      const jobs = Object.entries(FETCHERS).map(async ([id, fn]) => {
+        state.status[id] = "loading";
+        state.errors[id] = null;
+        try{
+          const res = await fn();
+          state.values[id] = res.value;
+          state.timestamps[id] = res.time;
+          state.status[id] = "ok";
+        }catch(err){
+          state.status[id] = "error";
+          state.errors[id] = err.message || "Fetch failed";
+        }
+      });
+
+      await Promise.allSettled(jobs);
+      state.loading = false;
+      state.prevComposite = prevComposite;
+      state.lastUpdated = new Date().toISOString();
+      renderAll();
+      if(state.tab === "charts") renderCharts();
+    }
+
+    function renderAll(){
+      renderStatus();
+      renderDashboard();
+      renderHistory();
+      renderSnapshots();
+      if(state.tab === "charts") renderCharts();
+    }
+
+    function renderStatus(){
+      const el = document.getElementById("app-status");
+      const okCount = Object.values(state.status).filter(v=>v==="ok").length;
+      const errCount = Object.values(state.status).filter(v=>v==="error").length;
+      const stale = staleLevel();
+
+      const staleText = stale === "ok" ? "Fresh"
+        : stale === "warn" ? "Slightly stale"
+        : "Stale";
+
+      const pillClass = stale === "ok" ? "ok" : stale === "warn" ? "warn" : "bad";
+
+      el.innerHTML = `
+        <div class="status-banner">
+          <div class="row" style="flex-wrap:wrap;gap:8px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <span class="pill ${pillClass}">${staleText}</span>
+              <span class="pill info">${okCount}/${INDICATORS.length} live</span>
+              ${errCount ? `<span class="pill bad">${errCount} failed</span>` : ``}
+              ${state.loading ? `<span class="pill warn">Refreshing…</span>` : ``}
+            </div>
+            <div class="mono" style="font-size:11px;color:#94a3b8">
+              Updated: ${fmtDate(state.lastUpdated)} · ${timeAgo(state.lastUpdated)}
             </div>
           </div>
-          <div style="text-align:right">
-            <div class="mono" style="font-size:20px;font-weight:700;color:${bc}">${s}</div>
-            <div class="mono" style="font-size:10px;color:${sim>80?"#f87171":sim>60?"#fbbf24":"#555"}">${sim}% match</div>
-          </div>
         </div>
-        <div class="preset-bar"><div class="preset-bar-fill" style="width:${Math.max(2,s)}%;background:${bc}"></div></div>
-      </div>`;
-    if(exp){
-      html+=`<div class="preset-body">
-        <div class="aftermath-box">
-          <div class="mono" style="font-size:10px;color:#555;letter-spacing:2px;margin-bottom:10px">📉 S&P 500 AFTER THIS POINT</div>
-          <div class="aftermath-grid">
-            ${[{l:"3 Months",v:a.sp_3m},{l:"6 Months",v:a.sp_6m},{l:"1 Year",v:a.sp_1y}].map(({l,v})=>`
-              <div class="aftermath-cell">
-                <div class="mono" style="font-size:10px;color:#555;margin-bottom:4px">${l}</div>
-                <div class="mono" style="font-size:20px;font-weight:700;color:${v==="TBD"?"#555":v.startsWith("+")?"#22c55e":"#ef4444"}">${v}</div>
-              </div>`).join("")}
-          </div>
-          <div class="mono" style="font-size:11px;color:#888;line-height:1.6">${a.narrative}</div>
-        </div>
-        <div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap">
-          ${INDICATORS.map(ind=>{const r=getScore(ind,p.values[ind.id]);const c=COLORS[r.color];return`<span class="tag" style="background:${c.bg};color:${c.text}">${ind.icon} ${fmtNum(p.values[ind.id],ind.unit)}</span>`;}).join("")}
-        </div>
-        <button class="btn" onclick="loadPreset(PRESETS.find(x=>x.id==='${p.id}'))" style="margin-top:14px;width:100%;padding:10px;font-weight:600">Load into Dashboard →</button>
-      </div>`;
+      `;
     }
-    html+=`</div>`;
-  });
-  document.getElementById("tab-history").innerHTML=html;
-}
 
-function renderSnapshots(){
-  const score=composite(state.values);
-  let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-    <span class="mono" style="font-size:11px;color:#444;letter-spacing:3px">SAVED SNAPSHOTS</span>
-    <button class="btn" onclick="addSnap()">📸 Save Current (${Math.round(score)})</button>
-  </div>`;
-  if(!state.snapshots.length){
-    html+=`<div class="mono" style="font-size:12px;color:#444;text-align:center;padding:40px">No snapshots yet.</div>`;
-  }
-  state.snapshots.forEach((snap,i)=>{
-    const s=Math.round(composite(snap.values));const bc=barColor(s);
-    const sim=Math.round(similarity(state.values,snap.values)*100);
-    const similar=findSimilar(snap.values);
-    const days=Math.round((Date.now()-snap.timestamp)/(864e5));
-    const delta=i<state.snapshots.length-1?Math.round(composite(snap.values)-composite(state.snapshots[i+1].values)):null;
-    html+=`<div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span class="mono" style="font-size:22px;font-weight:700;color:${bc}">${s}</span>
-            ${delta!==null?`<span class="mono" style="font-size:12px;color:${delta>0?"#f87171":delta<0?"#38bdf8":"#666"}">${delta>0?"+":""}${delta} vs prev</span>`:""}
+    function renderDashboard(){
+      const score = composite(state.values);
+      const rg = regime(score);
+      const pb = getPlaybook(score);
+      const analogs = topAnalogs(state.values, 3);
+      const topAnalog = analogs[0];
+      const scoreDelta = deltaText(score, state.prevComposite);
+
+      const drivers = contributionBreakdown(state.values).slice(0, 3);
+
+      const dash = document.getElementById("tab-dash");
+      dash.innerHTML = `
+        <div class="hero" style="background:${rg.grad};box-shadow:${rg.glow}">
+          <div class="hero-top">
+            <div>
+              <div class="mono" style="font-size:11px;letter-spacing:3px;opacity:.82">
+                ${state.lastUpdated ? `LIVE · ${fmtDate(state.lastUpdated)}` : "WAITING FOR DATA"}
+              </div>
+              <div class="score-row">
+                <div class="score">${score === null ? "—" : Math.round(score)}</div>
+                <div>
+                  <div class="regime">${rg.label}</div>
+                  <div class="mono" style="font-size:12px;opacity:.9;margin-top:4px">Δ ${scoreDelta}</div>
+                </div>
+              </div>
+              <div class="hero-sub">→ ${rg.view}</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+              <button class="btn" id="refreshBtn" ${state.loading ? "disabled" : ""}>${state.loading ? "⏳ Refreshing" : "🔄 Refresh"}</button>
+              <button class="btn ghost" id="saveSnapBtn">📸 Snapshot</button>
+            </div>
           </div>
-          <div class="mono" style="font-size:11px;color:#666;margin-top:2px">
-            ${new Date(snap.timestamp).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"})} ${new Date(snap.timestamp).toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"})}
-            ${days>0?`<span style="color:#444"> · ${days}d ago</span>`:""}
+          <div class="bar"><div style="width:${score === null ? 0 : clamp(score,0,100)}%"></div></div>
+          <div class="row mono" style="margin-top:6px;font-size:10px;opacity:.7">
+            <span>🥶 OVERSOLD</span>
+            <span>🔥 OVERHEATED</span>
           </div>
-          <div class="mono" style="font-size:11px;color:#555;margin-top:4px">≈ ${similar.preset?.emoji} ${similar.preset?.name} (${Math.round(similar.sim*100)}%)</div>
         </div>
-        <button onclick="delSnap(${snap.timestamp})" style="background:none;border:none;color:#444;cursor:pointer;font-family:'JetBrains Mono';font-size:14px">✕</button>
-      </div>
-      <div class="snap-tags">
-        ${INDICATORS.map(ind=>{const r=getScore(ind,snap.values[ind.id]);const c=COLORS[r.color];return`<span class="snap-tag" style="background:${c.bg};color:${c.text}">${ind.icon}${fmtNum(snap.values[ind.id],"")}</span>`;}).join("")}
-      </div>
-      <div class="mono" style="margin-top:8px;font-size:10px;color:${sim>80?"#f87171":sim>60?"#fbbf24":"#555"}">vs current: ${sim}% similar</div>
-    </div>`;
-  });
-  document.getElementById("tab-snapshots").innerHTML=html;
-}
 
-// ─── INIT ───────────────────────────────────────────────────────
-loadSnaps();
-render();
-fetchAll();
-</script>
+        <div class="grid two">
+          <div class="card">
+            <div class="section-title">ACTION PLAYBOOK</div>
+            ${
+              pb ? `
+              <div class="row" style="margin-bottom:10px">
+                <div style="font-size:18px;font-weight:800;color:${pb.color}">${pb.emoji} ${pb.label}</div>
+              </div>
+              <div class="action-list">
+                ${pb.actions.map(a=>`<div class="action-item"><div class="mono" style="font-size:11px;color:#d4d4d8">→ ${a}</div></div>`).join("")}
+              </div>` :
+              `<div class="empty">No actionable read until live inputs are available.</div>`
+            }
+          </div>
+
+          <div class="card">
+            <div class="section-title">WHY THIS SCORE</div>
+            ${
+              drivers.length ? `
+              <div class="driver-list">
+                ${drivers.map(d=>{
+                  const th = getThreshold(d.ind, state.values[d.ind.id]);
+                  const c = th ? COLORS[th.color] : {bg:"#3f3f46",tx:"#fff"};
+                  return `
+                    <div class="driver-item">
+                      <div class="row">
+                        <div style="display:flex;gap:8px;align-items:center">
+                          <span>${d.ind.icon}</span>
+                          <span style="font-weight:700">${d.ind.name}</span>
+                        </div>
+                        <span class="badge" style="background:${c.bg};color:${c.tx}">${th ? th.label : "Unavailable"}</span>
+                      </div>
+                      <div class="mono" style="font-size:11px;color:#9ca3af;margin-top:6px">
+                        ${fmtNum(state.values[d.ind.id], d.ind.unit)} · subscore ${Math.round(d.score)}
+                      </div>
+                    </div>
+                  `;
+                }).join("")}
+              </div>` :
+              `<div class="empty">No live drivers yet.</div>`
+            }
+          </div>
+        </div>
+
+        <div class="grid two" style="margin-top:12px">
+          <div class="card">
+            <div class="section-title">BEST ANALOG</div>
+            ${
+              topAnalog && topAnalog.sim > 0 ? `
+                <div class="analog-row">
+                  <div class="analog-head">
+                    <div>
+                      <div style="font-size:18px;font-weight:800">${topAnalog.e} ${topAnalog.n}</div>
+                      <div class="mono" style="font-size:11px;color:#6b7280;margin-top:4px">${topAnalog.d} · ${topAnalog.desc}</div>
+                    </div>
+                    <div class="mono" style="font-size:18px;font-weight:800;color:${topAnalog.sim > .8 ? "#fca5a5" : topAnalog.sim > .65 ? "#fde68a" : "#93c5fd"}">${Math.round(topAnalog.sim*100)}%</div>
+                  </div>
+                  <div class="mini-grid">
+                    <div class="mini"><div class="t">3M</div><div class="v" style="color:${String(topAnalog.af.m3).startsWith("+") ? "#22c55e" : "#ef4444"}">${topAnalog.af.m3}</div></div>
+                    <div class="mini"><div class="t">6M</div><div class="v" style="color:${String(topAnalog.af.m6).startsWith("+") ? "#22c55e" : "#ef4444"}">${topAnalog.af.m6}</div></div>
+                    <div class="mini"><div class="t">1Y</div><div class="v" style="color:${String(topAnalog.af.y1).startsWith("+") ? "#22c55e" : "#ef4444"}">${topAnalog.af.y1}</div></div>
+                  </div>
+                  <div class="mono" style="font-size:11px;color:#9ca3af;margin-top:10px">${topAnalog.af.n}</div>
+                </div>
+              ` : `<div class="empty">Not enough live data to match historical analogs.</div>`
+            }
+          </div>
+
+          <div class="card">
+            <div class="section-title">DATA NOTES</div>
+            <div class="note-list">
+              <div class="note-item"><div class="disclosure">This version shows unavailable indicators as “—” instead of zero, so bad data does not distort the composite score.</div></div>
+              <div class="note-item"><div class="disclosure">For production, move market data requests to a serverless proxy. Browser fetches to finance endpoints can fail due to CORS or endpoint changes.</div></div>
+              <div class="note-item"><div class="disclosure">Historical analogs are context aids, not predictions. Similar scores can still happen in very different macro regimes.</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <div class="row" style="margin-bottom:10px">
+            <div class="section-title" style="margin-bottom:0">LIVE INDICATORS</div>
+            <details>
+              <summary class="btn ghost">Expand data</summary>
+            </details>
+          </div>
+          <div id="indicatorTable">
+            ${INDICATORS.map(ind => renderIndicatorRow(ind)).join("")}
+          </div>
+        </div>
+      `;
+
+      document.getElementById("refreshBtn").addEventListener("click", fetchAll);
+      document.getElementById("saveSnapBtn").addEventListener("click", snapshotNow);
+    }
+
+    function renderIndicatorRow(ind){
+      const val = state.values[ind.id];
+      const th = getThreshold(ind, val);
+      const color = th ? COLORS[th.color] : {bg:"#3f3f46",tx:"#fff"};
+      const norm = normalizedRaw(ind, val);
+      const stat = state.status[ind.id];
+      const stamp = state.timestamps[ind.id] ? fmtDate(state.timestamps[ind.id]) : "—";
+      const meta = stat === "ok" ? `✓ ${stamp}` : stat === "loading" ? "Refreshing…" : stat === "error" ? `Error: ${state.errors[ind.id] || "failed"}` : "Waiting";
+
+      return `
+        <div class="indicator-row" style="margin-bottom:8px">
+          <div class="mono" style="font-size:14px">${ind.icon}</div>
+          <div>
+            <div class="indicator-name">${ind.name}</div>
+            <div class="indicator-meta">${meta}</div>
+          </div>
+          <div class="badge" style="background:${color.bg};color:${color.tx}">${th ? th.label : "Unavailable"}</div>
+          <div class="indicator-value">${fmtNum(val, ind.unit)}</div>
+
+          <div class="indicator-bar-wrap" style="grid-column:2 / 5">
+            <div class="indicator-line">
+              <div style="width:${norm === null ? 0 : norm}%;background:${th ? color.bg : "#52525b"}"></div>
+            </div>
+            <div class="indicator-action">${th ? "→ " + th.action : "This input is not currently available."}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderHistory(){
+      const el = document.getElementById("tab-history");
+      const currentScore = composite(state.values);
+
+      el.innerHTML = `
+        <div class="card">
+          <div class="section-title">HISTORICAL SCENARIOS</div>
+          <div style="display:grid;gap:10px">
+            ${PRESETS.map(p => {
+              const sc = composite(p.v);
+              const sim = cosineSimilarity(state.values, p.v);
+              const isOpen = state.expandedPreset === p.id;
+              return `
+                <div class="analog-row">
+                  <div class="analog-head">
+                    <div>
+                      <div style="font-size:16px;font-weight:800">${p.e} ${p.n}</div>
+                      <div class="mono" style="font-size:11px;color:#6b7280;margin-top:4px">${p.d} · ${p.desc}</div>
+                    </div>
+                    <div style="text-align:right">
+                      <div class="mono" style="font-size:18px;font-weight:800;color:${scoreColor(sc)}">${Math.round(sc)}</div>
+                      <div class="mono" style="font-size:11px;color:${sim > .8 ? "#fca5a5" : sim > .65 ? "#fde68a" : "#93c5fd"}">${Math.round(sim*100)}%</div>
+                    </div>
+                  </div>
+
+                  <div class="bar" style="margin-top:10px"><div style="width:${sc}%;background:${scoreColor(sc)}"></div></div>
+
+                  <div style="margin-top:10px">
+                    <button class="btn ghost preset-toggle" data-preset="${p.id}">${isOpen ? "Hide details" : "Show details"}</button>
+                  </div>
+
+                  ${isOpen ? `
+                    <div class="mini-grid">
+                      <div class="mini"><div class="t">3M</div><div class="v" style="color:${String(p.af.m3).startsWith("+") ? "#22c55e" : "#ef4444"}">${p.af.m3}</div></div>
+                      <div class="mini"><div class="t">6M</div><div class="v" style="color:${String(p.af.m6).startsWith("+") ? "#22c55e" : "#ef4444"}">${p.af.m6}</div></div>
+                      <div class="mini"><div class="t">1Y</div><div class="v" style="color:${String(p.af.y1).startsWith("+") ? "#22c55e" : "#ef4444"}">${p.af.y1}</div></div>
+                    </div>
+                    <div class="mono" style="font-size:11px;color:#9ca3af;margin-top:10px">${p.af.n}</div>
+                    <div class="tags">
+                      ${INDICATORS.map(ind => {
+                        const th = getThreshold(ind, p.v[ind.id]);
+                        const c = th ? COLORS[th.color] : {bg:"#3f3f46",tx:"#fff"};
+                        return `<span class="tag" style="background:${c.bg};color:${c.tx}">${ind.icon} ${fmtNum(p.v[ind.id], ind.unit)}</span>`;
+                      }).join("")}
+                    </div>
+                  ` : ``}
+                </div>
+              `;
+            }).join("")}
+          </div>
+        </div>
+      `;
+
+      el.querySelectorAll(".preset-toggle").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const id = btn.dataset.preset;
+          state.expandedPreset = state.expandedPreset === id ? null : id;
+          renderHistory();
+        });
+      });
+    }
+
+    function renderCharts(){
+      const el = document.getElementById("tab-charts");
+      const analog = topAnalogs(state.values, 1)[0];
+
+      el.innerHTML = `
+        <div class="grid">
+          <div class="card chart-card">
+            <div class="section-title">CURRENT VS CLOSEST ANALOG</div>
+            <div class="chart-wrap"><canvas id="barCompare"></canvas></div>
+          </div>
+          <div class="card chart-card">
+            <div class="section-title">VIX HISTORICAL SPIKES</div>
+            <div class="chart-wrap"><canvas id="vixChart"></canvas></div>
+          </div>
+          <div class="card chart-card">
+            <div class="section-title">FEAR & GREED HISTORY</div>
+            <div class="chart-wrap"><canvas id="fgChart"></canvas></div>
+          </div>
+        </div>
+      `;
+
+      Object.values(state.charts).forEach(c=>{ try{ c.destroy(); }catch{} });
+      state.charts = {};
+
+      const labels = INDICATORS.map(i => i.name);
+      const cur = INDICATORS.map(i => normalizedRaw(i, state.values[i.id]) ?? null);
+      const ana = analog ? INDICATORS.map(i => normalizedRaw(i, analog.v[i.id]) ?? null) : [];
+
+      state.charts.barCompare = new Chart(document.getElementById("barCompare"), {
+        type:"bar",
+        data:{
+          labels,
+          datasets:[
+            {
+              label:"Current",
+              data:cur,
+              backgroundColor:"#22c55e",
+              borderRadius:6
+            },
+            ...(analog ? [{
+              label:`${analog.n} (${analog.d})`,
+              data:ana,
+              backgroundColor:analog.c + "cc",
+              borderRadius:6
+            }] : [])
+          ]
+        },
+        options:{
+          indexAxis:"y",
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{
+            legend:{labels:{color:"#9ca3af", font:{family:"JetBrains Mono", size:10}}},
+            tooltip:{mode:"index", intersect:false}
+          },
+          scales:{
+            x:{min:0,max:100,grid:{color:"#1f1f25"},ticks:{color:"#6b7280",font:{family:"JetBrains Mono",size:10}}},
+            y:{grid:{display:false},ticks:{color:"#9ca3af",font:{family:"JetBrains Mono",size:10}}}
+          }
+        }
+      });
+
+      const vixData = [...VIX_HIST];
+      if(state.values.vix !== null) vixData.push({d:"NOW", v:state.values.vix, l:"Current"});
+      state.charts.vixChart = new Chart(document.getElementById("vixChart"), {
+        type:"bar",
+        data:{
+          labels:vixData.map(x=>x.d),
+          datasets:[{
+            data:vixData.map(x=>x.v),
+            backgroundColor:vixData.map(x => x.d==="NOW" ? "#22c55e" : x.v >= 60 ? "#ef4444" : x.v >= 35 ? "#f97316" : "#38bdf8"),
+            borderRadius:4
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{
+            legend:{display:false},
+            tooltip:{
+              callbacks:{
+                afterLabel:(ctx)=>vixData[ctx.dataIndex].l
+              }
+            }
+          },
+          scales:{
+            x:{grid:{display:false},ticks:{color:"#6b7280",font:{family:"JetBrains Mono",size:9}}},
+            y:{beginAtZero:true,grid:{color:"#1f1f25"},ticks:{color:"#6b7280",font:{family:"JetBrains Mono",size:10}}}
+          }
+        }
+      });
+
+      const fgData = [...FG_HIST];
+      if(state.values.fearGreed !== null) fgData.push({d:"NOW", v:state.values.fearGreed, l:"Current"});
+      state.charts.fgChart = new Chart(document.getElementById("fgChart"), {
+        type:"line",
+        data:{
+          labels:fgData.map(x=>x.d),
+          datasets:[{
+            data:fgData.map(x=>x.v),
+            borderColor:"#eab308",
+            backgroundColor:"rgba(234,179,8,.10)",
+            fill:true,
+            tension:.28,
+            pointRadius:fgData.map(x=>x.d==="NOW" ? 6 : 4),
+            pointBackgroundColor:fgData.map(x => x.d==="NOW" ? "#22c55e" : x.v<=20 ? "#2563eb" : x.v>=80 ? "#ef4444" : "#eab308")
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{
+            legend:{display:false},
+            tooltip:{
+              callbacks:{
+                afterLabel:(ctx)=>fgData[ctx.dataIndex].l
+              }
+            }
+          },
+          scales:{
+            x:{grid:{display:false},ticks:{color:"#6b7280",font:{family:"JetBrains Mono",size:9}}},
+            y:{
+              min:0,max:100,
+              grid:{color:"#1f1f25"},
+              ticks:{
+                color:"#6b7280",
+                font:{family:"JetBrains Mono",size:10},
+                callback:(v)=> v <= 20 ? "Fear" : v >= 80 ? "Greed" : v
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderSnapshots(){
+      const el = document.getElementById("tab-snaps");
+      const currentScore = composite(state.values);
+
+      el.innerHTML = `
+        <div class="card">
+          <div class="row" style="margin-bottom:12px">
+            <div class="section-title" style="margin-bottom:0">SNAPSHOTS</div>
+            <div style="display:flex;gap:8px">
+              <button class="btn" id="snapNowBtn">📸 Save current</button>
+              <button class="btn ghost" id="clearSnapsBtn">Clear</button>
+            </div>
+          </div>
+
+          ${
+            state.snapshots.length ? `
+              <div style="display:grid;gap:10px">
+                ${state.snapshots.map((snap, idx) => {
+                  const analog = topAnalogs(snap.values, 1)[0];
+                  const prev = state.snapshots[idx + 1];
+                  const d = prev ? snap.score - prev.score : null;
+                  return `
+                    <div class="snap-row">
+                      <div class="snap-head">
+                        <div>
+                          <div style="display:flex;gap:8px;align-items:center">
+                            <div class="mono" style="font-size:22px;font-weight:800;color:${scoreColor(snap.score)}">${snap.score === null ? "—" : Math.round(snap.score)}</div>
+                            ${d === null ? "" : `<div class="mono" style="font-size:12px;color:${d>0 ? "#fca5a5" : d<0 ? "#93c5fd" : "#71717a"}">${d>0?"+":""}${d.toFixed(1)}</div>`}
+                          </div>
+                          <div class="mono" style="font-size:11px;color:#6b7280;margin-top:4px">${fmtDate(snap.t)} · ${timeAgo(snap.t)}</div>
+                          <div class="mono" style="font-size:11px;color:#9ca3af;margin-top:6px">
+                            Closest analog: ${analog ? `${analog.e} ${analog.n} (${Math.round(analog.sim*100)}%)` : "—"}
+                          </div>
+                        </div>
+                        <button class="btn ghost snap-del" data-ts="${snap.t}">Delete</button>
+                      </div>
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+            ` : `<div class="empty">No snapshots yet.</div>`
+          }
+        </div>
+      `;
+
+      const snapBtn = document.getElementById("snapNowBtn");
+      const clearBtn = document.getElementById("clearSnapsBtn");
+      if(snapBtn) snapBtn.addEventListener("click", snapshotNow);
+      if(clearBtn) clearBtn.addEventListener("click", ()=>{
+        state.snapshots = [];
+        saveSnapshots();
+        renderSnapshots();
+      });
+      el.querySelectorAll(".snap-del").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const ts = Number(btn.dataset.ts);
+          state.snapshots = state.snapshots.filter(x => x.t !== ts);
+          saveSnapshots();
+          renderSnapshots();
+        });
+      });
+    }
+
+    init();
+  </script>
 </body>
 </html>
