@@ -52,7 +52,7 @@
     .empty{padding:24px;text-align:center;color:#8f8f99;background:#0d0d11;border:1px dashed #262631;border-radius:14px}
     .status-banner{margin-bottom:12px;padding:10px 12px;border-radius:12px;border:1px solid #2a2f3a;background:#0c1017;font-size:12px;color:#aab4c3}
     .footer{margin:18px 0 6px;text-align:center;font-size:10px;color:#cbd5e1;background:#0b1220;border:1px solid #1e293b;border-radius:10px;padding:10px 12px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;opacity:.95}
-    .chart-wrap{height:280px}
+    .chart-wrap{height:320px}
     @media (max-width:700px){.two{grid-template-columns:1fr}.indicator-row{grid-template-columns:24px 1fr auto}.indicator-row .indicator-bar-wrap{grid-column:2/4}.score{font-size:54px}.hero{padding:18px}}
   </style>
 </head>
@@ -161,6 +161,7 @@ async function fetchAll(){
     Object.entries(ENDPOINTS).map(async([id,url])=>{
       state.status[id]='loading';
       try{
+        if(location.protocol === 'file:') throw new Error('local file mode');
         const res=await fetch(url,{cache:'no-store'});
         if(!res.ok)throw new Error(`HTTP ${res.status}`);
         const data=await res.json();
@@ -228,9 +229,53 @@ function renderHistory(){
 }
 
 async function fetchNasdaqHistory() {
-  const res = await fetch('/api/nasdaq-history', { cache: 'no-store' });
-  if (!res.ok) throw new Error('history fetch failed');
-  return await res.json();
+  const makeFallbackHistory = () => {
+    const dates = [];
+    const closes = [];
+    let value = 100;
+
+    for (let i = 0; i < 2520; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - (2520 - i));
+      dates.push(d.toISOString().slice(0, 10));
+
+      const drift = 0.00045;
+      const cycle = Math.sin(i / 95) * 0.004 + Math.sin(i / 28) * 0.002;
+      const shock = (i % 420 > 390 && i % 420 < 405) ? -0.012 : 0;
+      const noise = ((Math.sin(i * 12.9898) * 43758.5453) % 1 - 0.5) * 0.01;
+
+      value = Math.max(40, value * (1 + drift + cycle + shock + noise));
+      closes.push(Number(value.toFixed(2)));
+    }
+
+    return {
+      value: closes.at(-1),
+      dates,
+      closes,
+      source: 'Local fallback synthetic history',
+      updatedAt: dates.at(-1),
+      stale: true,
+      fallbackUsed: true
+    };
+  };
+
+  try {
+    if (location.protocol === 'file:') {
+      return makeFallbackHistory();
+    }
+
+    const res = await fetch('/api/nasdaq-history', { cache: 'no-store' });
+    if (!res.ok) throw new Error('history fetch failed');
+
+    const data = await res.json();
+    if (!data || !Array.isArray(data.closes) || !data.closes.length) {
+      throw new Error('invalid history payload');
+    }
+
+    return data;
+  } catch (err) {
+    return makeFallbackHistory();
+  }
 }
 
 function normalize100(arr) {
@@ -314,7 +359,7 @@ async function renderCharts() {
       <div class="card">
         <div class="section-title">NASDAQ OVERLAY</div>
         <div class="mono" style="font-size:11px;color:#9ca3af;margin-bottom:10px">
-          Similarity ${result.similarity}% · Analog ${result.analogStart} → ${result.analogEnd}
+          Similarity ${result.similarity}% · Analog ${result.analogStart} → ${result.analogEnd} · ${d.fallbackUsed ? 'Fallback history' : 'Live history'}
         </div>
         <div class="chart-wrap"><canvas id="nasdaqOverlay"></canvas></div>
       </div>
@@ -404,4 +449,3 @@ fetchAll();
 setInterval(fetchAll, 300000);
 </script>
 </body>
-</html>
