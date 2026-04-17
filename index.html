@@ -1,165 +1,121 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Temperature Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#09090b;color:#e5e5e5;font-family:'IBM Plex Sans',sans-serif;padding:20px 16px;min-height:100vh;}
+.mx{max-width:680px;margin:0 auto;}
+.mono{font-family:'JetBrains Mono',monospace;}
+.tabs{display:flex;gap:4px;margin-bottom:20px;background:#111113;border-radius:12px;padding:4px;}
+.tab-btn{flex:1;padding:10px 0;border-radius:10px;border:none;cursor:pointer;background:transparent;color:#666;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;transition:all 0.2s;}
+.tab-btn.active{background:#1f1f23;color:#fff;}
+.thermo{border-radius:20px;padding:28px 32px;color:#fff;margin-bottom:16px;transition:all 0.4s;}
+.thermo .lbl{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:3px;opacity:0.8;margin-bottom:4px;}
+.thermo .score-row{display:flex;align-items:baseline;gap:16px;}
+.thermo .big{font-size:64px;font-weight:700;line-height:1;}
+.thermo .status{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;letter-spacing:2px;}
+.bar-track{margin-top:12px;height:8px;background:rgba(0,0,0,0.25);border-radius:4px;position:relative;}
+.bar-fill{position:absolute;left:0;top:0;height:100%;background:rgba(255,255,255,0.7);border-radius:4px;transition:width 0.5s;}
+.bar-labels{display:flex;justify-content:space-between;margin-top:6px;font-family:'JetBrains Mono',monospace;font-size:10px;opacity:0.6;letter-spacing:1px;}
+.verdict{margin-top:14px;font-size:14px;font-weight:500;opacity:0.9;}
+.card{background:#111113;border:1px solid #2a2a2f;border-radius:14px;padding:16px 20px;margin-bottom:12px;}
+.ind-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #1a1a1f;flex-wrap:wrap;}
+.ind-row:last-child{border-bottom:none;}
+.badge{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;padding:2px 8px;border-radius:5px;width:88px;text-align:center;flex-shrink:0;}
+.ind-input{width:66px;background:#1a1a1f;border:1px solid #333;border-radius:6px;color:#e5e5e5;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;padding:4px 6px;text-align:right;}
+.btn{background:#1a1a1f;border:1px solid #2a2a2f;border-radius:8px;color:#aaa;cursor:pointer;padding:6px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;}
+.btn:hover{border-color:#444;color:#ccc;}
+.btn:disabled{opacity:0.5;cursor:default;}
+.sim-box{background:#111113;border:1px solid #2a2a2f;border-radius:14px;padding:16px 20px;margin-top:16px;}
+.aftermath-box{background:#0a0a0c;border-radius:10px;padding:14px 16px;margin-top:14px;}
+.aftermath-grid{display:flex;gap:12px;margin-bottom:12px;}
+.aftermath-cell{flex:1;text-align:center;background:#111113;border-radius:8px;padding:10px 4px;}
+.preset-card{background:#111113;border:1px solid #2a2a2f;border-radius:14px;overflow:hidden;margin-bottom:12px;transition:all 0.2s;}
+.preset-card.expanded{border-color:#333;}
+.preset-header{padding:16px 20px;cursor:pointer;}
+.preset-body{padding:0 20px 20px;border-top:1px solid #1a1a1f;}
+.preset-bar{margin-top:10px;height:10px;background:#1a1a1f;border-radius:4px;overflow:hidden;}
+.preset-bar-fill{height:100%;border-radius:4px;transition:width 0.4s;}
+.tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:4px;display:inline-block;margin:2px;}
+.snap-tags{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;}
+.snap-tag{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;border-radius:4px;}
+.action-box{background:#0d1117;border:1px solid #1c2333;border-radius:10px;padding:14px 16px;margin-top:14px;}
+.action-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #111827;}
+.action-item:last-child{border-bottom:none;}
+.action-emoji{font-size:16px;flex-shrink:0;margin-top:2px;}
+.action-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:#cbd5e1;line-height:1.5;}
+.action-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;margin-bottom:8px;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+.footer{margin-top:28px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:#2a2a2f;letter-spacing:1px;}
+@media(max-width:500px){.thermo .big{font-size:48px;}.thermo{padding:20px 16px;}.aftermath-grid{flex-direction:column;gap:8px;}}
+</style>
+</head>
+<body>
+<div class="mx" id="app">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('dashboard')">🌡️ Dashboard</button>
+    <button class="tab-btn" onclick="switchTab('history')">📜 History</button>
+    <button class="tab-btn" onclick="switchTab('snapshots')">📸 Snapshots</button>
+  </div>
+  <div id="tab-dashboard" class="tab-content active"></div>
+  <div id="tab-history" class="tab-content"></div>
+  <div id="tab-snapshots" class="tab-content"></div>
+  <div class="footer">NOT FINANCIAL ADVICE</div>
+</div>
 
-const INDICATORS = [
-  { id:"vix", name:"VIX", cat:"Sentiment", icon:"⚡", unit:"",
-    thresholds:[
-      {max:12,label:"Complacent",score:85,color:"hot",action:"헤지 비용 최저 → 풋옵션 매수 적기"},
-      {max:18,label:"Calm",score:65,color:"warm",action:"포트폴리오 보호 점검"},
-      {max:25,label:"Cautious",score:40,color:"neutral",action:"현 포지션 유지"},
-      {max:35,label:"Fearful",score:20,color:"cool",action:"워치리스트 종목 분할매수 시작"},
-      {max:Infinity,label:"Panic",score:5,color:"cold",action:"공포 극대화 → 우량주 적극 매수 구간"}
-    ]},
-  { id:"fearGreed", name:"Fear & Greed", cat:"Sentiment", icon:"🧠", unit:"",
-    thresholds:[
-      {max:20,label:"Extreme Fear",score:5,color:"cold",action:"역발상 매수. 현금 비중 줄이기"},
-      {max:40,label:"Fear",score:25,color:"cool",action:"분할 매수 시작점"},
-      {max:60,label:"Neutral",score:50,color:"neutral",action:"기존 전략 유지"},
-      {max:80,label:"Greed",score:75,color:"warm",action:"신규 매수 자제. 리밸런싱 검토"},
-      {max:Infinity,label:"Extreme Greed",score:95,color:"hot",action:"이익 실현. 현금 비중 확대"}
-    ]},
-  { id:"putCall", name:"Put/Call", cat:"Sentiment", icon:"📊", unit:"",
-    thresholds:[
-      {max:0.6,label:"Euphoria",score:90,color:"hot",action:"보호적 풋 매수. 콜 매도 검토"},
-      {max:0.8,label:"Bullish",score:70,color:"warm",action:"추격 매수 자제"},
-      {max:1.0,label:"Neutral",score:50,color:"neutral",action:"시장 방향성 관망"},
-      {max:1.2,label:"Cautious",score:30,color:"cool",action:"반등 시 매수 준비"},
-      {max:Infinity,label:"Panic Hedge",score:10,color:"cold",action:"과도한 헤지 = 역발상 매수 신호"}
-    ]},
-  { id:"spPE", name:"S&P P/E", cat:"Valuation", icon:"💰", unit:"x",
-    thresholds:[
-      {max:14,label:"Cheap",score:10,color:"cold",action:"인덱스 비중 확대. 장기투자 적기"},
-      {max:18,label:"Fair",score:30,color:"cool",action:"정상 밸류에이션. 선별적 매수"},
-      {max:22,label:"Rich",score:55,color:"neutral",action:"밸류 대비 성장 확인 후 매수"},
-      {max:28,label:"Expensive",score:75,color:"warm",action:"신규 진입 축소. 이익 실현 시작"},
-      {max:Infinity,label:"Bubble",score:95,color:"hot",action:"위험 자산 축소. 방어주/현금 이동"}
-    ]},
-  { id:"buffett", name:"Buffett Ind.", cat:"Valuation", icon:"🏛️", unit:"%",
-    thresholds:[
-      {max:70,label:"Deep Value",score:5,color:"cold",action:"올인 구간. 역사적 저평가"},
-      {max:100,label:"Undervalued",score:25,color:"cool",action:"적극 매수. 장기 수익률 기대"},
-      {max:130,label:"Fair",score:50,color:"neutral",action:"정상 범위. DCA 지속"},
-      {max:170,label:"Overvalued",score:75,color:"warm",action:"신규 자금 투입 속도 줄이기"},
-      {max:Infinity,label:"Extreme",score:95,color:"hot",action:"현금/채권 비중 30%+ 확보"}
-    ]},
-  { id:"breadth", name:">200d MA", cat:"Breadth", icon:"📈", unit:"%",
-    thresholds:[
-      {max:15,label:"Capitulation",score:5,color:"cold",action:"시장 전체 투매 → 브로드 인덱스 매수"},
-      {max:30,label:"Oversold",score:20,color:"cool",action:"섹터 로테이션 매수 기회"},
-      {max:60,label:"Healthy",score:50,color:"neutral",action:"건전한 랠리. 추세 추종"},
-      {max:80,label:"Extended",score:75,color:"warm",action:"소수 종목 의존 체크. 분산 강화"},
-      {max:Infinity,label:"Euphoric",score:92,color:"hot",action:"과열. 래깅 섹터로 교체 검토"}
-    ]},
-  { id:"yieldCurve", name:"Yield Curve", cat:"Macro", icon:"📐", unit:"%",
-    thresholds:[
-      {max:-0.5,label:"Deep Inversion",score:80,color:"warm",action:"경기침체 대비. 방어주/국채 비중↑"},
-      {max:0,label:"Inverted",score:65,color:"warm",action:"사이클 후반. 경기민감주 축소"},
-      {max:0.5,label:"Flat",score:45,color:"neutral",action:"전환기. 현금 유보하며 관망"},
-      {max:1.5,label:"Normal",score:30,color:"cool",action:"정상 환경. 주식 비중 유지"},
-      {max:Infinity,label:"Steep",score:20,color:"cool",action:"회복 초기. 금융/소형주 매수 유리"}
-    ]},
-  { id:"creditSpread", name:"HY Spread", cat:"Macro", icon:"🏦", unit:"%",
-    thresholds:[
-      {max:3,label:"Risk-On",score:80,color:"warm",action:"크레딧 과열. HY채권 축소"},
-      {max:4,label:"Normal",score:50,color:"neutral",action:"정상. 크레딧 포지션 유지"},
-      {max:5.5,label:"Cautious",score:35,color:"cool",action:"스트레스 초기. IG채권으로 이동"},
-      {max:8,label:"Stress",score:15,color:"cold",action:"유동성 확보. 디폴트 위험 모니터링"},
-      {max:Infinity,label:"Crisis",score:5,color:"cold",action:"신용 경색. 국채/현금만 보유"}
-    ]},
-  { id:"rsi", name:"RSI (14w)", cat:"Technical", icon:"🔄", unit:"",
-    thresholds:[
-      {max:25,label:"Very Oversold",score:5,color:"cold",action:"기술적 반등 임박. 단기 매수"},
-      {max:35,label:"Oversold",score:20,color:"cool",action:"분할매수 진입 구간"},
-      {max:65,label:"Neutral",score:50,color:"neutral",action:"추세 방향 확인 후 행동"},
-      {max:75,label:"Overbought",score:75,color:"warm",action:"추가 매수 보류. 트레일링 스탑"},
-      {max:Infinity,label:"V. Overbought",score:95,color:"hot",action:"단기 과열. 부분 이익실현"}
-    ]},
-  { id:"maDist", name:"Dist 200d MA", cat:"Technical", icon:"📏", unit:"%",
-    thresholds:[
-      {max:-12,label:"Crash",score:3,color:"cold",action:"패닉 셀링 구간. 용기 있는 매수"},
-      {max:-5,label:"Oversold",score:18,color:"cool",action:"200일선 복귀 베팅. 분할매수"},
-      {max:5,label:"Normal",score:45,color:"neutral",action:"정상 범위. 포지션 유지"},
-      {max:12,label:"Extended",score:75,color:"warm",action:"평균 회귀 리스크. 트레일링 스탑 설정"},
-      {max:Infinity,label:"Blow-Off",score:95,color:"hot",action:"극단적 괴리. 비중 축소 필수"}
-    ]},
+<script>
+// ─── DATA ───────────────────────────────────────────────────────
+const INDICATORS=[
+  {id:"vix",name:"VIX",cat:"Sentiment",icon:"⚡",unit:"",thresholds:[{max:12,label:"Complacent",score:85,color:"hot",action:"헤지 비용 최저 → 풋옵션 매수 시작"},{max:18,label:"Calm",score:65,color:"warm",action:"포트폴리오 보호 점검"},{max:25,label:"Cautious",score:40,color:"neutral",action:"현 포지션 유지"},{max:35,label:"Fearful",score:20,color:"cool",action:"워치리스트 종목 분할매수 시작"},{max:1e9,label:"Panic",score:5,color:"cold",action:"공포 극대화 → 우량주 적극 매수 구간"}]},
+  {id:"fearGreed",name:"Fear & Greed",cat:"Sentiment",icon:"🧠",unit:"",thresholds:[{max:20,label:"Extreme Fear",score:5,color:"cold",action:"역발상 매수. 현금 비중 줄이기"},{max:40,label:"Fear",score:25,color:"cool",action:"신규 매수 자세. 리밸런싱 검토"},{max:60,label:"Neutral",score:50,color:"neutral",action:"기존 전략 유지"},{max:80,label:"Greed",score:75,color:"warm",action:"신규 매수 중단. 리밸런싱 검토"},{max:1e9,label:"Extreme Greed",score:95,color:"hot",action:"이익 실현. 현금 비중 확대"}]},
+  {id:"putCall",name:"Put/Call",cat:"Sentiment",icon:"📊",unit:"",thresholds:[{max:0.6,label:"Euphoria",score:90,color:"hot",action:"보수적 포 매수. 콜매도 검토"},{max:0.8,label:"Bullish",score:70,color:"warm",action:"시장 방향성 관망"},{max:1.0,label:"Neutral",score:50,color:"neutral",action:"시장 방향성 관망"},{max:1.2,label:"Cautious",score:30,color:"cool",action:"과도한 헤지 → 역발상 매수 신호"},{max:1e9,label:"Panic Hedge",score:10,color:"cold",action:"Panic Hedge → 역발상 매수 신호"}]},
+  {id:"spPE",name:"S&P P/E",cat:"Valuation",icon:"💰",unit:"x",thresholds:[{max:14,label:"Cheap",score:10,color:"cold",action:"인덱스 비중 확대. 장기투자 적기"},{max:18,label:"Fair",score:30,color:"cool",action:"정상 밸류에이션. 선별적 매수"},{max:22,label:"Rich",score:55,color:"neutral",action:"빠른 대비 성장 확인 후 매수"},{max:28,label:"Expensive",score:75,color:"warm",action:"신규 자금 투입 속도 줄이기"},{max:1e9,label:"Bubble",score:95,color:"hot",action:"위험 자산 축소. 방어주/채권 비중↑"}]},
+  {id:"buffett",name:"Buffett Ind.",cat:"Valuation",icon:"🏛️",unit:"%",thresholds:[{max:70,label:"Deep Value",score:5,color:"cold",action:"올인 구간. 역사적 저평가"},{max:100,label:"Undervalued",score:25,color:"cool",action:"적극 매수. 장기 수익률 기대↑"},{max:130,label:"Fair",score:50,color:"neutral",action:"정상 범위. DCA 지속"},{max:170,label:"Overvalued",score:75,color:"warm",action:"신규 자금 투입 속도 줄이기"},{max:1e9,label:"Extreme",score:95,color:"hot",action:"시장 전체에 브르트포스 인덱스 매수↓"}]},
+  {id:"breadth",name:">200d MA",cat:"Breadth",icon:"📈",unit:"%",thresholds:[{max:15,label:"Capitulation",score:5,color:"cold",action:"소수 종목 의존 체크. 분산 강화"},{max:30,label:"Oversold",score:20,color:"cool",action:"건전한 랠리. 추세 추종"},{max:60,label:"Healthy",score:50,color:"neutral",action:"건전한 랠리. 추세 추종"},{max:80,label:"Extended",score:75,color:"warm",action:"추가 매수 보류. 트레일링 스탑"},{max:1e9,label:"Euphoric",score:92,color:"hot",action:"추가 매수 보류. 트레일링 스탑 설정"}]},
+  {id:"yieldCurve",name:"Yield Curve",cat:"Macro",icon:"📐",unit:"%",thresholds:[{max:-0.5,label:"Deep Inversion",score:80,color:"warm",action:"경기침체 대비. 방어주/채권 비중↑"},{max:0,label:"Inverted",score:65,color:"warm",action:"사이클 후반. 경기민감주 축소"},{max:0.5,label:"Flat",score:45,color:"neutral",action:"현 유보하며 관망"},{max:1.5,label:"Normal",score:30,color:"cool",action:"정상 환경. 주식 비중 유지"},{max:1e9,label:"Steep",score:20,color:"cool",action:"회복 초기. 금융/소형주 매수 유리"}]},
+  {id:"creditSpread",name:"HY Spread",cat:"Macro",icon:"🏦",unit:"%",thresholds:[{max:3,label:"Risk-On",score:80,color:"warm",action:"크레딧 과열. HY채권 축소"},{max:4,label:"Normal",score:50,color:"neutral",action:"정상. 크레딧 포지션 유지"},{max:5.5,label:"Cautious",score:35,color:"cool",action:"스트레스 초기. IG체전으로 이동"},{max:8,label:"Stress",score:15,color:"cold",action:"유동성 확보. 디폴트 위험 모니터링"},{max:1e9,label:"Crisis",score:5,color:"cold",action:"신용 경색. 국채/현금만 보유"}]},
+  {id:"rsi",name:"RSI (14w)",cat:"Technical",icon:"🔄",unit:"",thresholds:[{max:25,label:"Very Oversold",score:5,color:"cold",action:"기술적 반등 임박. 단기 매수"},{max:35,label:"Oversold",score:20,color:"cool",action:"추세 방향 확인 후 행동"},{max:65,label:"Neutral",score:50,color:"neutral",action:"추세 방향 확인 후 행동"},{max:75,label:"Overbought",score:75,color:"warm",action:"추가 매수 보류. 트레일링 스탑"},{max:1e9,label:"V. Overbought",score:95,color:"hot",action:"단기 과열. 부분 익실현"}]},
+  {id:"maDist",name:"Dist 200d MA",cat:"Technical",icon:"📏",unit:"%",thresholds:[{max:-12,label:"Crash",score:3,color:"cold",action:"패닉 셀링 구간. 용기 있는 매수"},{max:-5,label:"Oversold",score:18,color:"cool",action:"200일선 복귀 베팅. 분할매수"},{max:5,label:"Normal",score:45,color:"neutral",action:"정상 범위. 포지션 유지"},{max:12,label:"Extended",score:75,color:"warm",action:"평균 회귀 리스크. 트레일링 스탑 설정"},{max:1e9,label:"Blow-Off",score:95,color:"hot",action:"극단적 괴리. 추격 매수 자제"}]},
 ];
 
-const PLAYBOOK = [
-  { min:0, max:15, zone:"EXTREME FEAR", color:"#2563EB", emoji:"🟦",
-    actions:[
-      "현금 비중 → 주식으로 공격적 전환 (70-90% 주식)",
-      "우량 대형주 (S&P 500 ETF) 분할매수 시작",
-      "공포에 팔지 말 것 — 역사적으로 1년 내 +38% 평균 반등",
-      "HY채권 스프레드 확인 후 IG등급 회사채 매수 검토",
-      "변동성 매도 전략 (커버드콜, 풋매도) 수익률 극대화",
-    ]},
-  { min:15, max:35, zone:"OVERSOLD", color:"#38bdf8", emoji:"🔵",
-    actions:[
-      "워치리스트 종목 분할매수 (3-4회 나눠서)",
-      "현금 비중 20-30%로 점진적 축소",
-      "경기민감 섹터 (금융, 산업재) 비중 확대 검토",
-      "포트폴리오 리밸런싱 — 하락한 자산군 매수",
-      "달러 약세 시 해외 자산 편입 고려",
-    ]},
-  { min:35, max:65, zone:"NEUTRAL", color:"#eab308", emoji:"🟡",
-    actions:[
-      "기존 전략 유지. DCA (정기 적립) 계속",
-      "포트폴리오 점검 — 목표 비중과 괴리 확인",
-      "개별 종목 펀더멘털 분석에 집중",
-      "헤지 비용 적정 시 보호적 풋 매수 검토",
-      "다음 방향성 확인될 때까지 현금 10-20% 유보",
-    ]},
-  { min:65, max:85, zone:"OVERHEATED", color:"#f97316", emoji:"🟠",
-    actions:[
-      "이익 실현 시작 — 가장 많이 오른 종목부터",
-      "현금 비중 25-35%로 확대",
-      "성장주 → 가치주/배당주 로테이션",
-      "트레일링 스탑 5-10% 설정",
-      "신규 매수 중단. 관망 모드",
-    ]},
-  { min:85, max:100, zone:"EXTREME GREED", color:"#dc2626", emoji:"🔴",
-    actions:[
-      "포트폴리오 30-50% 현금화",
-      "방어 섹터 (유틸리티, 헬스케어, 필수소비재)로 이동",
-      "풋옵션 또는 인버스 ETF로 다운사이드 헤지",
-      "장기 국채 (TLT) 비중 확대 — 안전자산 이동",
-      "FOMO 경계 — 추격매수는 최악의 선택",
-    ]},
+const PRESETS=[
+  {id:"black_monday",name:"Black Monday",date:"Oct 1987",emoji:"⬛",desc:"S&P -20.47% in one day",color:"#1e40af",aftermath:{sp_3m:"+15%",sp_6m:"+23%",sp_1y:"+21%",narrative:"V자 반등. 1988년 +12%. 공포가 매수 기회였음."},values:{vix:60,fearGreed:3,putCall:1.5,spPE:14,buffett:55,breadth:10,yieldCurve:0.8,creditSpread:5.0,rsi:15,maDist:-25}},
+  {id:"dotcom_peak",name:"Dot-Com Peak",date:"Mar 2000",emoji:"🫧",desc:"NASDAQ 5,048. CAPE ~44.",color:"#FF2D2D",aftermath:{sp_3m:"-4%",sp_6m:"-7%",sp_1y:"-12%",narrative:"NASDAQ -78%. S&P -49% by Oct 2002. 15년간 전고점 회복 못함."},values:{vix:24,fearGreed:85,putCall:0.55,spPE:44,buffett:146,breadth:65,yieldCurve:-0.2,creditSpread:5.5,rsi:72,maDist:15}},
+  {id:"dotcom_bottom",name:"Dot-Com Bottom",date:"Oct 2002",emoji:"💀",desc:"NASDAQ -78%. Enron, WorldCom.",color:"#2563EB",aftermath:{sp_3m:"+8%",sp_6m:"+14%",sp_1y:"+24%",narrative:"5년 불장 시작. 최악이 최고의 매수 타이밍."},values:{vix:40,fearGreed:10,putCall:1.3,spPE:28,buffett:73,breadth:12,yieldCurve:1.8,creditSpread:10.7,rsi:22,maDist:-30}},
+  {id:"gfc_pre",name:"Pre-GFC Peak",date:"Oct 2007",emoji:"🏠",desc:"Housing bubble top.",color:"#FF8C00",aftermath:{sp_3m:"-10%",sp_6m:"-18%",sp_1y:"-40%",narrative:"S&P 1,565→666. -57%. 회복 5.5년."},values:{vix:16,fearGreed:75,putCall:0.6,spPE:22,buffett:109,breadth:75,yieldCurve:-0.1,creditSpread:2.6,rsi:68,maDist:10}},
+  {id:"gfc_crash",name:"GFC Crash",date:"Nov 2008",emoji:"📉",desc:"Lehman. VIX 80. HY 21.8%.",color:"#1e40af",aftermath:{sp_3m:"-25%",sp_6m:"+1%",sp_1y:"+23%",narrative:"추가 하락 후 2009.3 바닥. 11년 최장 불장 시작."},values:{vix:80,fearGreed:5,putCall:1.6,spPE:13,buffett:57,breadth:5,yieldCurve:1.7,creditSpread:21.8,rsi:18,maDist:-38}},
+  {id:"gfc_bottom",name:"GFC Bottom",date:"Mar 2009",emoji:"🕳️",desc:"S&P 666. Buffett 56%.",color:"#2563EB",aftermath:{sp_3m:"+36%",sp_6m:"+51%",sp_1y:"+68%",narrative:"역사상 최고의 매수 시점. 11년 불장."},values:{vix:50,fearGreed:8,putCall:1.4,spPE:15,buffett:56,breadth:3,yieldCurve:2.0,creditSpread:16.5,rsi:20,maDist:-35}},
+  {id:"covid",name:"COVID Crash",date:"Mar 2020",emoji:"🦠",desc:"VIX ATH 82.69.",color:"#1e40af",aftermath:{sp_3m:"+30%",sp_6m:"+46%",sp_1y:"+75%",narrative:"5개월만에 전고점 돌파. 이후 +100%."},values:{vix:82,fearGreed:2,putCall:1.5,spPE:20,buffett:125,breadth:8,yieldCurve:0.3,creditSpread:10.9,rsi:16,maDist:-30}},
+  {id:"covid_euphoria",name:"Post-COVID Mania",date:"Dec 2021",emoji:"🚀",desc:"Meme stocks. Buffett 190%.",color:"#FF2D2D",aftermath:{sp_3m:"-8%",sp_6m:"-20%",sp_1y:"-19%",narrative:"2022 베어마켓. S&P -25%, NASDAQ -33%."},values:{vix:17,fearGreed:82,putCall:0.55,spPE:29,buffett:190,breadth:70,yieldCurve:0.8,creditSpread:3.0,rsi:70,maDist:12}},
+  {id:"bear_2022",name:"2022 Bear",date:"Oct 2022",emoji:"🐻",desc:"Fed hikes. S&P -25%.",color:"#3BA0D6",aftermath:{sp_3m:"+8%",sp_6m:"+15%",sp_1y:"+21%",narrative:"AI 테마로 3년 연속 강세 (2023-2025)."},values:{vix:33,fearGreed:15,putCall:1.2,spPE:18,buffett:140,breadth:20,yieldCurve:-0.5,creditSpread:5.9,rsi:28,maDist:-15}},
+  {id:"tariff_2025",name:"Tariff Shock",date:"Apr 2025",emoji:"💣",desc:"VIX 52. Liberation Day.",color:"#3BA0D6",aftermath:{sp_3m:"TBD",sp_6m:"TBD",sp_1y:"TBD",narrative:"진행 중. 관세 협상 결과에 따라 결정."},values:{vix:52,fearGreed:4,putCall:1.3,spPE:23,buffett:195,breadth:35,yieldCurve:0.4,creditSpread:4.6,rsi:30,maDist:-10}},
 ];
 
-const PRESETS = [
-  { id:"black_monday",name:"Black Monday",date:"Oct 1987",emoji:"⬛",desc:"S&P -20.47% in one day",color:"#1e40af",
-    aftermath:{sp_3m:"+15%",sp_6m:"+23%",sp_1y:"+21%",narrative:"V자 반등. 1988년 +12%. 공포가 매수 기회였음."},
-    values:{vix:60,fearGreed:3,putCall:1.5,spPE:14,buffett:55,breadth:10,yieldCurve:0.8,creditSpread:5.0,rsi:15,maDist:-25}},
-  { id:"dotcom_peak",name:"Dot-Com Peak",date:"Mar 2000",emoji:"🫧",desc:"NASDAQ 5,048. CAPE ~44.",color:"#FF2D2D",
-    aftermath:{sp_3m:"-4%",sp_6m:"-7%",sp_1y:"-12%",narrative:"NASDAQ -78%. S&P -49% by Oct 2002. 15년간 전고점 회복 못함."},
-    values:{vix:24,fearGreed:85,putCall:0.55,spPE:44,buffett:146,breadth:65,yieldCurve:-0.2,creditSpread:5.5,rsi:72,maDist:15}},
-  { id:"dotcom_bottom",name:"Dot-Com Bottom",date:"Oct 2002",emoji:"💀",desc:"NASDAQ -78%. Enron, WorldCom.",color:"#2563EB",
-    aftermath:{sp_3m:"+8%",sp_6m:"+14%",sp_1y:"+24%",narrative:"5년 불장 시작. 최악이 최고의 매수 타이밍."},
-    values:{vix:40,fearGreed:10,putCall:1.3,spPE:28,buffett:73,breadth:12,yieldCurve:1.8,creditSpread:10.7,rsi:22,maDist:-30}},
-  { id:"gfc_pre",name:"Pre-GFC Peak",date:"Oct 2007",emoji:"🏠",desc:"Housing bubble top.",color:"#FF8C00",
-    aftermath:{sp_3m:"-10%",sp_6m:"-18%",sp_1y:"-40%",narrative:"S&P 1,565→666. -57%. 회복에 5.5년."},
-    values:{vix:16,fearGreed:75,putCall:0.6,spPE:22,buffett:109,breadth:75,yieldCurve:-0.1,creditSpread:2.6,rsi:68,maDist:10}},
-  { id:"gfc_crash",name:"GFC Crash",date:"Nov 2008",emoji:"📉",desc:"Lehman. VIX 80. HY 21.8%.",color:"#1e40af",
-    aftermath:{sp_3m:"-25%",sp_6m:"+1%",sp_1y:"+23%",narrative:"추가 하락 후 2009.3 바닥. 이후 11년 불장."},
-    values:{vix:80,fearGreed:5,putCall:1.6,spPE:13,buffett:57,breadth:5,yieldCurve:1.7,creditSpread:21.8,rsi:18,maDist:-38}},
-  { id:"gfc_bottom",name:"GFC Bottom",date:"Mar 2009",emoji:"🕳️",desc:"S&P 666. Buffett 56%.",color:"#2563EB",
-    aftermath:{sp_3m:"+36%",sp_6m:"+51%",sp_1y:"+68%",narrative:"역사상 최고의 매수 시점. 11년 불장 시작."},
-    values:{vix:50,fearGreed:8,putCall:1.4,spPE:15,buffett:56,breadth:3,yieldCurve:2.0,creditSpread:16.5,rsi:20,maDist:-35}},
-  { id:"covid",name:"COVID Crash",date:"Mar 2020",emoji:"🦠",desc:"VIX ATH 82.69.",color:"#1e40af",
-    aftermath:{sp_3m:"+30%",sp_6m:"+46%",sp_1y:"+75%",narrative:"역대 최빠른 회복. 5개월 만에 전고점. 이후 +100%."},
-    values:{vix:82,fearGreed:2,putCall:1.5,spPE:20,buffett:125,breadth:8,yieldCurve:0.3,creditSpread:10.9,rsi:16,maDist:-30}},
-  { id:"covid_euphoria",name:"Post-COVID Mania",date:"Dec 2021",emoji:"🚀",desc:"Meme stocks. Buffett 190%.",color:"#FF2D2D",
-    aftermath:{sp_3m:"-8%",sp_6m:"-20%",sp_1y:"-19%",narrative:"2022 베어마켓. S&P -25%, NASDAQ -33%. Fed 0→4.5%."},
-    values:{vix:17,fearGreed:82,putCall:0.55,spPE:29,buffett:190,breadth:70,yieldCurve:0.8,creditSpread:3.0,rsi:70,maDist:12}},
-  { id:"bear_2022",name:"2022 Bear",date:"Oct 2022",emoji:"🐻",desc:"Fed hikes. S&P -25%.",color:"#3BA0D6",
-    aftermath:{sp_3m:"+8%",sp_6m:"+15%",sp_1y:"+21%",narrative:"AI 테마로 3년 연속 강세 (2023-2025)."},
-    values:{vix:33,fearGreed:15,putCall:1.2,spPE:18,buffett:140,breadth:20,yieldCurve:-0.5,creditSpread:5.9,rsi:28,maDist:-15}},
-  { id:"tariff_2025",name:"Tariff Shock",date:"Apr 2025",emoji:"💣",desc:"VIX 52. Liberation Day.",color:"#3BA0D6",
-    aftermath:{sp_3m:"TBD",sp_6m:"TBD",sp_1y:"TBD",narrative:"진행 중. 관세 협상 결과에 따라 결정."},
-    values:{vix:52,fearGreed:4,putCall:1.3,spPE:23,buffett:195,breadth:35,yieldCurve:0.4,creditSpread:4.6,rsi:30,maDist:-10}},
+const PLAYBOOK=[
+  {min:0,max:15,zone:"EXTREME FEAR",color:"#2563EB",emoji:"💎",actions:["현금 비중→주식으로 공격적 전환 (70-90% 주식)","우량 대형주 (S&P ETF) 분할매수 시작","공포에 팔지 말 것 — 역사적으로 1년 내 +38% 평균 반등","HY채권 스프레드 확인 후 IG등급 회사채 매수 검토","분할/정기 매도 전략 (커버드콜, 풋매도) 수익률 극대화"]},
+  {min:15,max:35,zone:"OVERSOLD",color:"#38bdf8",emoji:"🔍",actions:["현금 비중 20-30%로 점진적 축소","경기민감 섹터 (금융, 산업재) 비중 확대 검토","포트폴리오 리밸런싱 — 하락한 자산군에 재배분","달러 약세 시 해외 자산 편입 고려"]},
+  {min:35,max:65,zone:"NEUTRAL",color:"#eab308",emoji:"⚖️",actions:["기존 전략·DCA (정기 적립) 계속","포트폴리오 점검 — 목표 비중과의 괴리 확인","개별 종목 펀더멘털 분석에 집중","해외 비율 재점검. 다음 방향성 확인될 때까지 현금 10-20% 유보"]},
+  {min:65,max:85,zone:"OVERHEATED",color:"#f97316",emoji:"🔥",actions:["이익 실현 시작 — 가장 많이 오른 종목부터","현금 비중 25-35%로 확대","성장주 → 가치주/배당주 로테이션","트레일링 스탑 5-10% 설정","신규 매수 중단. 현 포모 마인드"]},
+  {min:85,max:100,zone:"EXTREME GREED",color:"#dc2626",emoji:"🚨",actions:["포트폴리오 30-50% 현금화","방어 섹터 (유틸리티, 헬스케어, 필수소비재) 이동","옵콜선 포토 인버스 ETF로 다운사이드 헤지","장기 국채 (TLT) 비중 확대 — 안전자산 이동","FOMO 경계 → 추격매수는 최악의 선택"]},
 ];
 
 const COLORS={hot:{bg:"#FF2D2D",text:"#fff"},warm:{bg:"#FF8C00",text:"#fff"},neutral:{bg:"#E8B931",text:"#1a1a1a"},cool:{bg:"#3BA0D6",text:"#fff"},cold:{bg:"#2563EB",text:"#fff"}};
+
+// ─── STATE ──────────────────────────────────────────────────────
+let state={
+  values:{},timestamps:{},autoFetched:[],loading:false,lastUpdate:null,
+  snapshots:[],expandedPreset:null,activeTab:"dashboard"
+};
+const MANUAL_IDS=["putCall","spPE","buffett","breadth","creditSpread"];
+const MANUAL_DEFAULTS={putCall:0.9,spPE:25,buffett:200,breadth:55,creditSpread:3.5};
+INDICATORS.forEach(ind=>{state.values[ind.id]=MANUAL_DEFAULTS[ind.id]||50;});
+
+// ─── HELPERS ────────────────────────────────────────────────────
 function getScore(ind,val){for(const t of ind.thresholds)if(val<=t.max)return t;return ind.thresholds.at(-1);}
 function composite(vals){return INDICATORS.reduce((s,ind)=>s+getScore(ind,vals[ind.id]).score,0)/INDICATORS.length;}
 function barColor(s){return s<=15?"#2563EB":s<=35?"#38bdf8":s<=65?"#eab308":s<=85?"#f97316":"#dc2626";}
@@ -171,307 +127,231 @@ function thermoStyle(s){
   return{label:"EXTREME GREED",verdict:"Danger zone — de-risk",bg:"linear-gradient(135deg,#991b1b,#dc2626,#f87171)",glow:"0 0 60px rgba(220,38,38,0.5)"};
 }
 function similarity(a,b){
-  const normalize=(ind,val)=>{const scores=ind.thresholds.map(t=>t.score);const mn=Math.min(...scores),mx=Math.max(...scores);return(getScore(ind,val).score-mn)/(mx-mn||1);};
-  let dot=0,magA=0,magB=0;INDICATORS.forEach(ind=>{const na=normalize(ind,a[ind.id]||0),nb=normalize(ind,b[ind.id]||0);dot+=na*nb;magA+=na*na;magB+=nb*nb;});
-  return magA&&magB?dot/(Math.sqrt(magA)*Math.sqrt(magB)):0;
+  const norm=(ind,val)=>{const sc=ind.thresholds.map(t=>t.score);const mn=Math.min(...sc),mx=Math.max(...sc);return(getScore(ind,val).score-mn)/(mx-mn||1);};
+  let dot=0,mA=0,mB=0;
+  INDICATORS.forEach(ind=>{const na=norm(ind,a[ind.id]||0),nb=norm(ind,b[ind.id]||0);dot+=na*nb;mA+=na*na;mB+=nb*nb;});
+  return mA&&mB?dot/(Math.sqrt(mA)*Math.sqrt(mB)):0;
 }
-function findMostSimilar(vals){let best=null,bestSim=0;PRESETS.forEach(p=>{const s=similarity(vals,p.values);if(s>bestSim){bestSim=s;best=p;}});return{preset:best,similarity:bestSim};}
-function getPlaybook(score){return PLAYBOOK.find(p=>score>=p.min&&score<p.max)||PLAYBOOK[2];}
-
-const STORE_KEY="mkt-temp-snapshots";
-const M="'JetBrains Mono',monospace";
-const S="'IBM Plex Sans',sans-serif";
-
-async function fetchVIX(){try{const r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?range=1d&interval=1d");const d=await r.json();return{value:d.chart.result[0].meta.regularMarketPrice,asOf:new Date(d.chart.result[0].meta.regularMarketTime*1000)};}catch{return null;}}
-async function fetchFearGreed(){try{const r=await fetch("https://production.dataviz.cnn.io/index/fearandgreed/graphdata");const d=await r.json();return{value:Math.round(d.fear_and_greed.score),asOf:new Date(d.fear_and_greed.timestamp)};}catch{return null;}}
-async function fetchRSI(){try{const r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1mo&interval=1d");const d=await r.json();const ts=d.chart.result[0].timestamp;const c=d.chart.result[0].indicators.quote[0].close.filter(v=>v!=null);if(c.length<15)return null;let g=0,l=0;for(let i=c.length-14;i<c.length;i++){const diff=c[i]-c[i-1];if(diff>0)g+=diff;else l-=diff;}return{value:Math.round(100-100/(1+(g/14)/(l/14||0.001))),asOf:new Date(ts[ts.length-1]*1000)};}catch{return null;}}
-async function fetchMADist(){try{const r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1y&interval=1d");const d=await r.json();const ts=d.chart.result[0].timestamp;const c=d.chart.result[0].indicators.quote[0].close.filter(v=>v!=null);const cur=c.at(-1),sma=c.slice(-200).reduce((a,b)=>a+b,0)/Math.min(c.length,200);return{value:Math.round(((cur-sma)/sma)*1000)/10,asOf:new Date(ts[ts.length-1]*1000)};}catch{return null;}}
-async function fetchYieldCurve(){try{const[r10,r2]=await Promise.all([fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?range=1d&interval=1d"),fetch("https://query1.finance.yahoo.com/v8/finance/chart/2YY%3DF?range=1d&interval=1d")]);const d10=await r10.json(),d2=await r2.json();return{value:Math.round((d10.chart.result[0].meta.regularMarketPrice-d2.chart.result[0].meta.regularMarketPrice)*100)/100,asOf:new Date(d10.chart.result[0].meta.regularMarketTime*1000)};}catch{return null;}}
-
-const FETCHERS={vix:fetchVIX,fearGreed:fetchFearGreed,rsi:fetchRSI,maDist:fetchMADist,yieldCurve:fetchYieldCurve};
-const MANUAL_IDS=["putCall","spPE","buffett","breadth","creditSpread"];
-const MANUAL_DEFAULTS={putCall:0.9,spPE:25,buffett:200,breadth:55,creditSpread:3.5};
+function findSimilar(vals){let best=null,bs=0;PRESETS.forEach(p=>{const s=similarity(vals,p.values);if(s>bs){bs=s;best=p;}});return{preset:best,sim:bs};}
 function fmtDate(d){if(!d)return"";return d.toLocaleDateString("en-US",{month:"short",day:"numeric"})+" "+d.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"});}
+function getPlaybook(score){for(const p of PLAYBOOK)if(score>=p.min&&score<p.max)return p;return PLAYBOOK.at(-1);}
+function fmtNum(v,u){return typeof v==="number"?(Number.isInteger(v)?v:v.toFixed(1))+u:"-";}
 
-// ─── COMPONENTS ─────────────────────────────────────────────────
-function Thermo({score,label,sub}){
-  const s=Math.max(0,Math.min(100,score));const t=thermoStyle(s);
-  return(
-    <div style={{background:t.bg,borderRadius:20,padding:"28px 32px",color:"#fff",boxShadow:t.glow,transition:"all 0.4s"}}>
-      <div style={{fontFamily:M,fontSize:11,letterSpacing:3,opacity:0.8,marginBottom:4}}>{label||"COMPOSITE MARKET TEMPERATURE"}</div>
-      <div style={{display:"flex",alignItems:"baseline",gap:16}}>
-        <span style={{fontFamily:S,fontSize:64,fontWeight:700,lineHeight:1}}>{Math.round(s)}</span>
-        <span style={{fontFamily:M,fontSize:18,fontWeight:600,letterSpacing:2}}>{t.label}</span>
-      </div>
-      <div style={{marginTop:12,height:8,background:"rgba(0,0,0,0.25)",borderRadius:4,position:"relative"}}>
-        <div style={{position:"absolute",left:0,top:0,height:"100%",width:`${s}%`,background:"rgba(255,255,255,0.7)",borderRadius:4,transition:"width 0.5s"}}/>
-      </div>
-      <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontFamily:M,fontSize:10,opacity:0.6,letterSpacing:1}}>
-        <span>🥶 OVERSOLD</span><span>🔥 OVERHEATED</span>
-      </div>
-      <div style={{marginTop:14,fontSize:14,fontWeight:500,opacity:0.9,fontFamily:S}}>→ {t.verdict}</div>
-      {sub&&<div style={{marginTop:6,fontSize:12,opacity:0.7,fontFamily:M}}>{sub}</div>}
-    </div>
-  );
+// ─── FETCHERS ───────────────────────────────────────────────────
+async function fetchVIX(){try{const r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?range=1d&interval=1d");const d=await r.json();return{value:d.chart.result[0].meta.regularMarketPrice,asOf:new Date(d.chart.result[0].meta.regularMarketTime*1000)};}catch{return null;}}
+async function fetchFG(){try{const r=await fetch("https://production.dataviz.cnn.io/index/fearandgreed/graphdata");const d=await r.json();return{value:Math.round(d.fear_and_greed.score),asOf:new Date(d.fear_and_greed.timestamp)};}catch{return null;}}
+async function fetchRSI(){try{const r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1mo&interval=1d");const d=await r.json();const ts=d.chart.result[0].timestamp;const c=d.chart.result[0].indicators.quote[0].close.filter(v=>v!=null);if(c.length<15)return null;let g=0,l=0;for(let i=c.length-14;i<c.length;i++){const df=c[i]-c[i-1];if(df>0)g+=df;else l-=df;}return{value:Math.round(100-100/(1+(g/14)/(l/14||.001))),asOf:new Date(ts.at(-1)*1000)};}catch{return null;}}
+async function fetchMA(){try{const r=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1y&interval=1d");const d=await r.json();const ts=d.chart.result[0].timestamp;const c=d.chart.result[0].indicators.quote[0].close.filter(v=>v!=null);const cur=c.at(-1),sma=c.slice(-200).reduce((a,b)=>a+b,0)/Math.min(c.length,200);return{value:Math.round(((cur-sma)/sma)*1000)/10,asOf:new Date(ts.at(-1)*1000)};}catch{return null;}}
+async function fetchYC(){try{const[r10,r2]=await Promise.all([fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?range=1d&interval=1d"),fetch("https://query1.finance.yahoo.com/v8/finance/chart/2YY%3DF?range=1d&interval=1d")]);const d10=await r10.json(),d2=await r2.json();return{value:Math.round((d10.chart.result[0].meta.regularMarketPrice-d2.chart.result[0].meta.regularMarketPrice)*100)/100,asOf:new Date(d10.chart.result[0].meta.regularMarketTime*1000)};}catch{return null;}}
+const FETCHERS={vix:fetchVIX,fearGreed:fetchFG,rsi:fetchRSI,maDist:fetchMA,yieldCurve:fetchYC};
+
+async function fetchAll(){
+  state.loading=true;render();
+  const entries=Object.entries(FETCHERS);
+  const results=await Promise.allSettled(entries.map(([,fn])=>fn()));
+  const fetched=[];
+  entries.forEach(([id],i)=>{
+    if(results[i].status==="fulfilled"&&results[i].value!=null){
+      state.values[id]=results[i].value.value;
+      state.timestamps[id]=fmtDate(results[i].value.asOf);
+      fetched.push(id);
+    }
+  });
+  MANUAL_IDS.forEach(id=>{if(state.values[id]===50)state.values[id]=MANUAL_DEFAULTS[id];});
+  state.autoFetched=fetched;state.loading=false;
+  state.lastUpdate=new Date().toLocaleTimeString();
+  render();
 }
 
-function PlaybookCard({score}){
+// ─── STORAGE ────────────────────────────────────────────────────
+const SK="mkt-temp-snaps";
+function loadSnaps(){try{const d=localStorage.getItem(SK);if(d)state.snapshots=JSON.parse(d);}catch{}}
+function saveSnaps(){try{localStorage.setItem(SK,JSON.stringify(state.snapshots));}catch{}}
+function addSnap(){const s={timestamp:Date.now(),values:{...state.values}};state.snapshots.unshift(s);state.snapshots=state.snapshots.slice(0,50);saveSnaps();render();}
+function delSnap(ts){state.snapshots=state.snapshots.filter(s=>s.timestamp!==ts);saveSnaps();render();}
+
+// ─── RENDER ─────────────────────────────────────────────────────
+function switchTab(id){
+  state.activeTab=id;
+  document.querySelectorAll(".tab-btn").forEach((b,i)=>b.classList.toggle("active",["dashboard","history","snapshots"][i]===id));
+  document.querySelectorAll(".tab-content").forEach(el=>el.classList.remove("active"));
+  document.getElementById("tab-"+id).classList.add("active");
+  render();
+}
+
+function updateVal(id,v){if(!isNaN(v)){state.values[id]=v;render();}}
+function loadPreset(p){state.values={...p.values};state.timestamps={};state.autoFetched=[];switchTab("dashboard");}
+function togglePreset(id){state.expandedPreset=state.expandedPreset===id?null:id;render();}
+
+function render(){
+  const score=composite(state.values);
+  if(state.activeTab==="dashboard")renderDashboard(score);
+  if(state.activeTab==="history")renderHistory(score);
+  if(state.activeTab==="snapshots")renderSnapshots(score);
+}
+
+function renderDashboard(score){
+  const t=thermoStyle(score);const s=Math.max(0,Math.min(100,score));
+  const sim=findSimilar(state.values);const p=sim.preset;const pct=Math.round(sim.sim*100);
   const pb=getPlaybook(score);
-  return(
-    <div style={{background:"#111113",border:`1px solid ${pb.color}33`,borderRadius:14,padding:"18px 20px",marginTop:16}}>
-      <div style={{fontFamily:M,fontSize:11,color:pb.color,letterSpacing:2,marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
-        <span style={{fontSize:16}}>{pb.emoji}</span> ACTION PLAYBOOK — {pb.zone}
-      </div>
-      {pb.actions.map((a,i)=>(
-        <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"8px 0",borderBottom:i<pb.actions.length-1?"1px solid #1a1a1f":"none"}}>
-          <span style={{fontFamily:M,fontSize:12,color:pb.color,flexShrink:0,marginTop:1}}>{i+1}</span>
-          <span style={{fontFamily:S,fontSize:13,color:"#ccc",lineHeight:1.5}}>{a}</span>
+  const a=p?.aftermath;
+
+  let html=`
+  <div class="thermo" style="background:${t.bg};box-shadow:${t.glow}">
+    <div class="lbl">${state.lastUpdate?`LIVE · ${state.lastUpdate}`:"COMPOSITE MARKET TEMPERATURE"}</div>
+    <div class="score-row"><span class="big">${Math.round(s)}</span><span class="status">${t.label}</span></div>
+    <div class="bar-track"><div class="bar-fill" style="width:${s}%"></div></div>
+    <div class="bar-labels"><span>🥶 OVERSOLD</span><span>🔥 OVERHEATED</span></div>
+    <div class="verdict">→ ${t.verdict}</div>
+  </div>`;
+
+  // Action playbook
+  html+=`<div class="action-box">
+    <div class="action-label" style="color:${pb.color}">${pb.emoji} ${pb.zone} — ACTION PLAYBOOK</div>
+    ${pb.actions.map(a=>`<div class="action-item"><span class="action-emoji">→</span><span class="action-text">${a}</span></div>`).join("")}
+  </div>`;
+
+  // Similarity
+  if(p){
+    html+=`<div class="sim-box">
+      <div style="display:flex;align-items:center;gap:16px">
+        <span style="font-size:28px">${p.emoji}</span>
+        <div style="flex:1">
+          <div class="mono" style="font-size:11px;color:#888;letter-spacing:1px">MOST SIMILAR TO</div>
+          <div style="font-size:16px;font-weight:700">${p.name} <span style="color:#666;font-weight:400">(${p.date})</span></div>
+          <div class="mono" style="font-size:12px;color:${pct>85?"#f87171":pct>70?"#fbbf24":"#38bdf8"};font-weight:600">${pct}% similarity</div>
         </div>
-      ))}
+      </div>`;
+    if(a){
+      html+=`<div class="aftermath-box">
+        <div class="mono" style="font-size:10px;color:#555;letter-spacing:2px;margin-bottom:10px">📉 WHAT HAPPENED NEXT</div>
+        <div class="aftermath-grid">
+          ${[{l:"3M",v:a.sp_3m},{l:"6M",v:a.sp_6m},{l:"1Y",v:a.sp_1y}].map(({l,v})=>`
+            <div class="aftermath-cell">
+              <div class="mono" style="font-size:10px;color:#555;margin-bottom:4px">${l}</div>
+              <div class="mono" style="font-size:18px;font-weight:700;color:${v==="TBD"?"#555":v.startsWith("+")?"#22c55e":"#ef4444"}">${v}</div>
+            </div>`).join("")}
+        </div>
+        <div class="mono" style="font-size:11px;color:#888;line-height:1.5">${a.narrative}</div>
+      </div>`;
+    }
+    html+=`</div>`;
+  }
+
+  // Indicators
+  html+=`<div class="card" style="margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span class="mono" style="font-size:11px;color:#444;letter-spacing:3px">INDICATORS</span>
+      <button class="btn" onclick="fetchAll()" ${state.loading?"disabled":""}>${state.loading?"⏳ Fetching...":"🔄 Refresh Live Data"}</button>
+    </div>`;
+  INDICATORS.forEach(ind=>{
+    const r=getScore(ind,state.values[ind.id]);const c=COLORS[r.color];const isManual=MANUAL_IDS.includes(ind.id);
+    const ts=state.timestamps[ind.id];const live=state.autoFetched.includes(ind.id);
+    html+=`<div class="ind-row">
+      <span class="mono" style="font-size:12px;color:#666;width:22px">${ind.icon}</span>
+      <span style="font-size:14px;font-weight:600;width:95px;flex-shrink:0">${ind.name}</span>
+      <span class="badge" style="background:${c.bg};color:${c.text}">${r.label}</span>
+      <input class="ind-input" type="number" value="${state.values[ind.id]}" step="any" onchange="updateVal('${ind.id}',parseFloat(this.value))">
+      <span class="mono" style="font-size:11px;color:#555;width:14px">${ind.unit}</span>
+      <span class="mono" style="font-size:9px;color:${isManual?"#665500":live?"#2a6":"#444"};margin-left:auto">${isManual?"✏️ manual":live?`✓ ${ts||"live"}`:"—"}</span>
     </div>
-  );
+    <div style="padding:0 0 6px 34px"><span class="mono" style="font-size:9px;color:#444">→ ${r.action}</span></div>`;
+  });
+  html+=`</div>`;
+
+  document.getElementById("tab-dashboard").innerHTML=html;
 }
 
-function IndicatorRow({ind,value,onChange,autoFetched,asOf}){
-  const r=getScore(ind,value);const c=COLORS[r.color];const isManual=MANUAL_IDS.includes(ind.id);
-  return(
-    <div style={{padding:"12px 0",borderBottom:"1px solid #1a1a1f"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8}}>
-        <span style={{fontFamily:M,fontSize:12,color:"#666",width:22}}>{ind.icon}</span>
-        <span style={{fontFamily:S,fontSize:14,fontWeight:600,color:"#e5e5e5",width:95,flexShrink:0}}>{ind.name}</span>
-        <span style={{background:c.bg,color:c.text,fontFamily:M,fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:5,width:88,textAlign:"center",flexShrink:0}}>{r.label}</span>
-        <input type="number" value={value} step="any"
-          onChange={e=>{const v=parseFloat(e.target.value);if(!isNaN(v))onChange(v);}}
-          style={{width:66,background:"#1a1a1f",border:"1px solid #333",borderRadius:6,color:"#e5e5e5",fontFamily:M,fontSize:13,fontWeight:600,padding:"4px 6px",textAlign:"right"}}/>
-        <span style={{fontFamily:M,fontSize:11,color:"#555",width:14}}>{ind.unit}</span>
-        <span style={{fontFamily:M,fontSize:9,color:isManual?"#665500":autoFetched?"#2a6":"#444",marginLeft:"auto"}}>
-          {isManual?"✏️ manual":autoFetched?`✓ ${asOf||""}`:"—"}
-        </span>
-      </div>
-      <div style={{marginLeft:32,marginTop:4,fontFamily:M,fontSize:10,color:"#666",fontStyle:"italic"}}>
-        → {r.action}
-      </div>
-    </div>
-  );
-}
-
-function SimilarityBadge({vals}){
-  const{preset:p,similarity:sim}=findMostSimilar(vals);if(!p)return null;
-  const pct=Math.round(sim*100);const a=p.aftermath;
-  return(
-    <div style={{background:"#111113",border:"1px solid #2a2a2f",borderRadius:14,padding:"16px 20px",marginTop:16}}>
-      <div style={{display:"flex",alignItems:"center",gap:16}}>
-        <span style={{fontSize:28}}>{p.emoji}</span>
-        <div style={{flex:1}}>
-          <div style={{fontFamily:M,fontSize:11,color:"#888",letterSpacing:1}}>MOST SIMILAR TO</div>
-          <div style={{fontFamily:S,fontSize:16,fontWeight:700,color:"#e5e5e5"}}>{p.name} <span style={{color:"#666",fontWeight:400}}>({p.date})</span></div>
-          <div style={{fontFamily:M,fontSize:12,color:pct>85?"#f87171":pct>70?"#fbbf24":"#38bdf8",fontWeight:600}}>{pct}% similarity</div>
-        </div>
-      </div>
-      {a&&(
-        <div style={{marginTop:14,background:"#0a0a0c",borderRadius:10,padding:"14px 16px"}}>
-          <div style={{fontFamily:M,fontSize:10,color:"#555",letterSpacing:2,marginBottom:10}}>📉 WHAT HAPPENED NEXT</div>
-          <div style={{display:"flex",gap:12,marginBottom:12}}>
-            {[{l:"3M",v:a.sp_3m},{l:"6M",v:a.sp_6m},{l:"1Y",v:a.sp_1y}].map(({l,v})=>{
-              const pos=v.startsWith("+");const tbd=v==="TBD";
-              return(<div key={l} style={{flex:1,textAlign:"center",background:"#111113",borderRadius:8,padding:"10px 4px"}}>
-                <div style={{fontFamily:M,fontSize:10,color:"#555",marginBottom:4}}>{l}</div>
-                <div style={{fontFamily:M,fontSize:18,fontWeight:700,color:tbd?"#555":pos?"#22c55e":"#ef4444"}}>{v}</div>
-              </div>);
-            })}
-          </div>
-          <div style={{fontFamily:M,fontSize:11,color:"#888",lineHeight:1.5}}>{a.narrative}</div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── TABS ───────────────────────────────────────────────────────
-function TabDashboard({values,setValues,autoFetched,timestamps,fetchAll,loading,lastUpdate}){
-  const score=composite(values);
-  return(
-    <div style={{display:"flex",flexDirection:"column",gap:0}}>
-      <Thermo score={score} label={lastUpdate?`LIVE · ${lastUpdate}`:undefined}/>
-      <PlaybookCard score={score}/>
-      <SimilarityBadge vals={values}/>
-      <div style={{background:"#111113",border:"1px solid #2a2a2f",borderRadius:14,padding:"16px 20px",marginTop:16}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <span style={{fontFamily:M,fontSize:11,color:"#444",letterSpacing:3}}>INDICATORS</span>
-          <button onClick={fetchAll} disabled={loading}
-            style={{background:"#1a1a1f",border:"1px solid #2a2a2f",borderRadius:8,color:loading?"#555":"#aaa",cursor:"pointer",padding:"6px 14px",fontFamily:M,fontSize:11}}>
-            {loading?"⏳ Fetching...":"🔄 Refresh Live Data"}
-          </button>
-        </div>
-        {INDICATORS.map(ind=>(
-          <IndicatorRow key={ind.id} ind={ind} value={values[ind.id]}
-            onChange={v=>setValues(p=>({...p,[ind.id]:v}))}
-            autoFetched={autoFetched.includes(ind.id)} asOf={timestamps[ind.id]||null}/>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TabHistory({values,loadPreset,expandedId,setExpandedId}){
-  return(
-    <div style={{display:"flex",flexDirection:"column",gap:12}}>
-      <div style={{fontFamily:M,fontSize:11,color:"#444",letterSpacing:3,paddingLeft:4}}>HISTORICAL SCENARIOS</div>
-      {PRESETS.map(p=>{
-        const s=Math.round(composite(p.values));const bc=barColor(s);
-        const sim=Math.round(similarity(values,p.values)*100);const a=p.aftermath;const exp=expandedId===p.id;
-        return(
-          <div key={p.id} style={{background:"#111113",border:`1px solid ${exp?"#333":"#2a2a2f"}`,borderRadius:14,overflow:"hidden"}}>
-            <div onClick={()=>setExpandedId(exp?null:p.id)} style={{padding:"16px 20px",cursor:"pointer"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{display:"flex",alignItems:"center",gap:12}}>
-                  <span style={{fontSize:24}}>{p.emoji}</span>
-                  <div>
-                    <div style={{fontFamily:S,fontSize:15,fontWeight:700,color:"#e5e5e5"}}>{p.name}</div>
-                    <div style={{fontFamily:M,fontSize:11,color:"#666"}}>{p.date} · {p.desc}</div>
-                  </div>
-                </div>
-                <div style={{textAlign:"right"}}>
-                  <div style={{fontFamily:M,fontSize:20,fontWeight:700,color:bc}}>{s}</div>
-                  <div style={{fontFamily:M,fontSize:10,color:sim>80?"#f87171":sim>60?"#fbbf24":"#555"}}>{sim}% match</div>
-                </div>
-              </div>
-              <div style={{marginTop:10,height:10,background:"#1a1a1f",borderRadius:4,overflow:"hidden"}}>
-                <div style={{height:"100%",width:`${Math.max(2,s)}%`,background:bc,borderRadius:4}}/>
-              </div>
+function renderHistory(){
+  let html=`<div class="mono" style="font-size:11px;color:#444;letter-spacing:3px;padding-left:4px;margin-bottom:12px">HISTORICAL SCENARIOS</div>`;
+  PRESETS.forEach(p=>{
+    const s=Math.round(composite(p.values));const bc=barColor(s);
+    const sim=Math.round(similarity(state.values,p.values)*100);
+    const exp=state.expandedPreset===p.id;const a=p.aftermath;
+    html+=`<div class="preset-card ${exp?"expanded":""}">
+      <div class="preset-header" onclick="togglePreset('${p.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:24px">${p.emoji}</span>
+            <div>
+              <div style="font-size:15px;font-weight:700">${p.name}</div>
+              <div class="mono" style="font-size:11px;color:#666">${p.date} · ${p.desc}</div>
             </div>
-            {exp&&(
-              <div style={{padding:"0 20px 20px",borderTop:"1px solid #1a1a1f"}}>
-                <div style={{background:"#0a0a0c",borderRadius:10,padding:"14px 16px",marginTop:14}}>
-                  <div style={{fontFamily:M,fontSize:10,color:"#555",letterSpacing:2,marginBottom:10}}>📉 S&P 500 AFTER THIS POINT</div>
-                  <div style={{display:"flex",gap:12,marginBottom:12}}>
-                    {[{l:"3 Months",v:a.sp_3m},{l:"6 Months",v:a.sp_6m},{l:"1 Year",v:a.sp_1y}].map(({l,v})=>{
-                      const pos=v.startsWith("+");const tbd=v==="TBD";
-                      return(<div key={l} style={{flex:1,textAlign:"center",background:"#111113",borderRadius:8,padding:"10px 4px"}}>
-                        <div style={{fontFamily:M,fontSize:10,color:"#555",marginBottom:4}}>{l}</div>
-                        <div style={{fontFamily:M,fontSize:20,fontWeight:700,color:tbd?"#555":pos?"#22c55e":"#ef4444"}}>{v}</div>
-                      </div>);
-                    })}
-                  </div>
-                  <div style={{fontFamily:M,fontSize:11,color:"#888",lineHeight:1.6}}>{a.narrative}</div>
-                </div>
-                <div style={{marginTop:14,display:"flex",gap:6,flexWrap:"wrap"}}>
-                  {INDICATORS.map(ind=>{const r=getScore(ind,p.values[ind.id]);const c=COLORS[r.color];
-                    return <span key={ind.id} style={{fontFamily:M,fontSize:10,background:c.bg,color:c.text,padding:"3px 8px",borderRadius:4}}>{ind.icon} {typeof p.values[ind.id]==="number"?(Number.isInteger(p.values[ind.id])?p.values[ind.id]:p.values[ind.id].toFixed(1)):"-"}{ind.unit}</span>;
-                  })}
-                </div>
-                <button onClick={()=>loadPreset(p)}
-                  style={{marginTop:14,width:"100%",background:"#1a1a1f",border:"1px solid #333",borderRadius:8,color:"#aaa",cursor:"pointer",padding:"10px",fontFamily:M,fontSize:12,fontWeight:600}}>
-                  Load into Dashboard →
-                </button>
-              </div>
-            )}
           </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function TabSnapshots({values,snapshots,saveSnapshot,deleteSnapshot}){
-  const score=composite(values);
-  return(
-    <div style={{display:"flex",flexDirection:"column",gap:16}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontFamily:M,fontSize:11,color:"#444",letterSpacing:3}}>SAVED SNAPSHOTS</span>
-        <button onClick={()=>saveSnapshot(values)}
-          style={{background:"#1a1a1f",border:"1px solid #2a2a2f",borderRadius:8,color:"#aaa",cursor:"pointer",padding:"6px 14px",fontFamily:M,fontSize:11}}>
-          📸 Save Current ({Math.round(score)})
-        </button>
-      </div>
-      {snapshots.length===0&&<div style={{fontFamily:M,fontSize:12,color:"#444",textAlign:"center",padding:40}}>No snapshots yet.</div>}
-      {snapshots.map((snap,i)=>{
-        const s=Math.round(composite(snap.values));const bc=barColor(s);
-        const sim=Math.round(similarity(values,snap.values)*100);
-        const similar=findMostSimilar(snap.values);
-        const daysSince=Math.round((Date.now()-snap.timestamp)/(1000*60*60*24));
-        const delta=i<snapshots.length-1?Math.round(composite(snap.values)-composite(snapshots[i+1].values)):null;
-        const pb=getPlaybook(s);
-        return(
-          <div key={snap.timestamp} style={{background:"#111113",border:"1px solid #2a2a2f",borderRadius:14,padding:"16px 20px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-              <div>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{fontFamily:M,fontSize:22,fontWeight:700,color:bc}}>{s}</span>
-                  {delta!==null&&<span style={{fontFamily:M,fontSize:12,color:delta>0?"#f87171":delta<0?"#38bdf8":"#666"}}>{delta>0?"+":""}{delta} vs prev</span>}
-                </div>
-                <div style={{fontFamily:M,fontSize:11,color:"#666",marginTop:2}}>
-                  {new Date(snap.timestamp).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"})}
-                  {" "}{new Date(snap.timestamp).toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"})}
-                  {daysSince>0&&<span style={{color:"#444"}}> · {daysSince}d ago</span>}
-                </div>
-                <div style={{fontFamily:M,fontSize:11,color:"#555",marginTop:4}}>
-                  ≈ {similar.preset?.emoji} {similar.preset?.name} ({Math.round(similar.similarity*100)}%)
-                </div>
-                <div style={{fontFamily:M,fontSize:10,color:pb.color,marginTop:4}}>{pb.emoji} {pb.zone}</div>
-              </div>
-              <button onClick={()=>deleteSnapshot(snap.timestamp)}
-                style={{background:"none",border:"none",color:"#444",cursor:"pointer",fontFamily:M,fontSize:14}}>✕</button>
-            </div>
-            <div style={{marginTop:10,display:"flex",gap:6,flexWrap:"wrap"}}>
-              {INDICATORS.map(ind=>{const r=getScore(ind,snap.values[ind.id]);const c=COLORS[r.color];
-                return <span key={ind.id} style={{fontFamily:M,fontSize:9,background:c.bg,color:c.text,padding:"2px 6px",borderRadius:4}}>{ind.icon}{typeof snap.values[ind.id]==="number"?(Number.isInteger(snap.values[ind.id])?snap.values[ind.id]:snap.values[ind.id].toFixed(1)):"-"}</span>;
-              })}
-            </div>
-            <div style={{marginTop:8,fontFamily:M,fontSize:10,color:sim>80?"#f87171":sim>60?"#fbbf24":"#555"}}>vs current: {sim}% similar</div>
+          <div style="text-align:right">
+            <div class="mono" style="font-size:20px;font-weight:700;color:${bc}">${s}</div>
+            <div class="mono" style="font-size:10px;color:${sim>80?"#f87171":sim>60?"#fbbf24":"#555"}">${sim}% match</div>
           </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── MAIN ───────────────────────────────────────────────────────
-export default function App(){
-  const [tab,setTab]=useState("dashboard");
-  const [values,setValues]=useState(()=>{const init={};INDICATORS.forEach(ind=>{init[ind.id]=MANUAL_DEFAULTS[ind.id]||50;});return init;});
-  const [autoFetched,setAutoFetched]=useState([]);
-  const [timestamps,setTimestamps]=useState({});
-  const [loading,setLoading]=useState(false);
-  const [lastUpdate,setLastUpdate]=useState(null);
-  const [snapshots,setSnapshots]=useState([]);
-  const [expandedId,setExpandedId]=useState(null);
-  const mounted=useRef(false);
-
-  useEffect(()=>{(async()=>{try{const r=await window.storage.get(STORE_KEY);if(r)setSnapshots(JSON.parse(r.value));}catch{}})();},[]);
-
-  const fetchAll=useCallback(async()=>{
-    setLoading(true);const fetched=[];const newTs={...timestamps};
-    const entries=Object.entries(FETCHERS);
-    const results=await Promise.allSettled(entries.map(([,fn])=>fn()));
-    const newVals={...values};
-    entries.forEach(([id],i)=>{if(results[i].status==="fulfilled"&&results[i].value!=null){newVals[id]=results[i].value.value;fetched.push(id);newTs[id]=fmtDate(results[i].value.asOf);}});
-    MANUAL_IDS.forEach(id=>{if(!(id in newVals)||newVals[id]===50)newVals[id]=MANUAL_DEFAULTS[id];});
-    setValues(newVals);setAutoFetched(fetched);setTimestamps(newTs);setLoading(false);setLastUpdate(new Date().toLocaleTimeString());
-  },[]);
-
-  useEffect(()=>{if(!mounted.current){mounted.current=true;fetchAll();}},[fetchAll]);
-
-  const saveSnapshot=async(vals)=>{const snap={timestamp:Date.now(),values:{...vals}};const updated=[snap,...snapshots].slice(0,50);setSnapshots(updated);try{await window.storage.set(STORE_KEY,JSON.stringify(updated));}catch{}};
-  const deleteSnapshot=async(ts)=>{const updated=snapshots.filter(s=>s.timestamp!==ts);setSnapshots(updated);try{await window.storage.set(STORE_KEY,JSON.stringify(updated));}catch{}};
-  const loadPreset=(p)=>{setValues({...p.values});setTab("dashboard");};
-
-  const tabs=[{id:"dashboard",label:"🌡️ Dashboard"},{id:"history",label:"📜 History"},{id:"snapshots",label:"📸 Snapshots"}];
-  return(
-    <div style={{minHeight:"100vh",background:"#09090b",color:"#e5e5e5",padding:"20px 16px",fontFamily:S}}>
-      <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
-      <div style={{maxWidth:680,margin:"0 auto"}}>
-        <div style={{display:"flex",gap:4,marginBottom:20,background:"#111113",borderRadius:12,padding:4}}>
-          {tabs.map(t=>(<button key={t.id} onClick={()=>setTab(t.id)}
-            style={{flex:1,padding:"10px 0",borderRadius:10,border:"none",cursor:"pointer",
-              background:tab===t.id?"#1f1f23":"transparent",color:tab===t.id?"#fff":"#666",
-              fontFamily:M,fontSize:12,fontWeight:600,transition:"all 0.2s"}}>{t.label}</button>))}
         </div>
-        {tab==="dashboard"&&<TabDashboard values={values} setValues={setValues} autoFetched={autoFetched} timestamps={timestamps} fetchAll={fetchAll} loading={loading} lastUpdate={lastUpdate}/>}
-        {tab==="history"&&<TabHistory values={values} loadPreset={loadPreset} expandedId={expandedId} setExpandedId={setExpandedId}/>}
-        {tab==="snapshots"&&<TabSnapshots values={values} snapshots={snapshots} saveSnapshot={saveSnapshot} deleteSnapshot={deleteSnapshot}/>}
-        <div style={{marginTop:28,textAlign:"center",fontFamily:M,fontSize:9,color:"#2a2a2f",letterSpacing:1}}>NOT FINANCIAL ADVICE</div>
-      </div>
-    </div>
-  );
+        <div class="preset-bar"><div class="preset-bar-fill" style="width:${Math.max(2,s)}%;background:${bc}"></div></div>
+      </div>`;
+    if(exp){
+      html+=`<div class="preset-body">
+        <div class="aftermath-box">
+          <div class="mono" style="font-size:10px;color:#555;letter-spacing:2px;margin-bottom:10px">📉 S&P 500 AFTER THIS POINT</div>
+          <div class="aftermath-grid">
+            ${[{l:"3 Months",v:a.sp_3m},{l:"6 Months",v:a.sp_6m},{l:"1 Year",v:a.sp_1y}].map(({l,v})=>`
+              <div class="aftermath-cell">
+                <div class="mono" style="font-size:10px;color:#555;margin-bottom:4px">${l}</div>
+                <div class="mono" style="font-size:20px;font-weight:700;color:${v==="TBD"?"#555":v.startsWith("+")?"#22c55e":"#ef4444"}">${v}</div>
+              </div>`).join("")}
+          </div>
+          <div class="mono" style="font-size:11px;color:#888;line-height:1.6">${a.narrative}</div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap">
+          ${INDICATORS.map(ind=>{const r=getScore(ind,p.values[ind.id]);const c=COLORS[r.color];return`<span class="tag" style="background:${c.bg};color:${c.text}">${ind.icon} ${fmtNum(p.values[ind.id],ind.unit)}</span>`;}).join("")}
+        </div>
+        <button class="btn" onclick="loadPreset(PRESETS.find(x=>x.id==='${p.id}'))" style="margin-top:14px;width:100%;padding:10px;font-weight:600">Load into Dashboard →</button>
+      </div>`;
+    }
+    html+=`</div>`;
+  });
+  document.getElementById("tab-history").innerHTML=html;
 }
+
+function renderSnapshots(){
+  const score=composite(state.values);
+  let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <span class="mono" style="font-size:11px;color:#444;letter-spacing:3px">SAVED SNAPSHOTS</span>
+    <button class="btn" onclick="addSnap()">📸 Save Current (${Math.round(score)})</button>
+  </div>`;
+  if(!state.snapshots.length){
+    html+=`<div class="mono" style="font-size:12px;color:#444;text-align:center;padding:40px">No snapshots yet.</div>`;
+  }
+  state.snapshots.forEach((snap,i)=>{
+    const s=Math.round(composite(snap.values));const bc=barColor(s);
+    const sim=Math.round(similarity(state.values,snap.values)*100);
+    const similar=findSimilar(snap.values);
+    const days=Math.round((Date.now()-snap.timestamp)/(864e5));
+    const delta=i<state.snapshots.length-1?Math.round(composite(snap.values)-composite(state.snapshots[i+1].values)):null;
+    html+=`<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="mono" style="font-size:22px;font-weight:700;color:${bc}">${s}</span>
+            ${delta!==null?`<span class="mono" style="font-size:12px;color:${delta>0?"#f87171":delta<0?"#38bdf8":"#666"}">${delta>0?"+":""}${delta} vs prev</span>`:""}
+          </div>
+          <div class="mono" style="font-size:11px;color:#666;margin-top:2px">
+            ${new Date(snap.timestamp).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"})} ${new Date(snap.timestamp).toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"})}
+            ${days>0?`<span style="color:#444"> · ${days}d ago</span>`:""}
+          </div>
+          <div class="mono" style="font-size:11px;color:#555;margin-top:4px">≈ ${similar.preset?.emoji} ${similar.preset?.name} (${Math.round(similar.sim*100)}%)</div>
+        </div>
+        <button onclick="delSnap(${snap.timestamp})" style="background:none;border:none;color:#444;cursor:pointer;font-family:'JetBrains Mono';font-size:14px">✕</button>
+      </div>
+      <div class="snap-tags">
+        ${INDICATORS.map(ind=>{const r=getScore(ind,snap.values[ind.id]);const c=COLORS[r.color];return`<span class="snap-tag" style="background:${c.bg};color:${c.text}">${ind.icon}${fmtNum(snap.values[ind.id],"")}</span>`;}).join("")}
+      </div>
+      <div class="mono" style="margin-top:8px;font-size:10px;color:${sim>80?"#f87171":sim>60?"#fbbf24":"#555"}">vs current: ${sim}% similar</div>
+    </div>`;
+  });
+  document.getElementById("tab-snapshots").innerHTML=html;
+}
+
+// ─── INIT ───────────────────────────────────────────────────────
+loadSnaps();
+render();
+fetchAll();
+</script>
+</body>
+</html>
