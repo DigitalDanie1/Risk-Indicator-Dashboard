@@ -1,1 +1,2670 @@
-다시 핡것
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Market Temperature</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0c1220;
+      --bg-2: #161f33;
+      --surface: rgba(18, 24, 39, 0.86);
+      --surface-strong: rgba(24, 32, 51, 0.96);
+      --surface-soft: rgba(255, 244, 230, 0.05);
+      --border: rgba(255, 232, 204, 0.12);
+      --text: #f7f1e8;
+      --muted: #cfbea9;
+      --muted-2: #9f927f;
+      --shadow: 0 26px 80px rgba(4, 8, 18, 0.44);
+      --radius: 18px;
+      --radius-lg: 28px;
+      --hero-ring: rgba(255, 255, 255, 0.08);
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --info: #5eead4;
+      --cold: #4f7cff;
+      --cool: #3dd9c5;
+      --neutral: #ffd166;
+      --warm: #ff8a5b;
+      --hot: #ff5d73;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      padding: 24px 16px 40px;
+      color: var(--text);
+      font-family: "Sora", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255, 138, 91, 0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(61, 217, 197, 0.16), transparent 26%),
+        radial-gradient(circle at 50% 120%, rgba(79, 124, 255, 0.16), transparent 34%),
+        linear-gradient(180deg, #0a1020 0%, #10192a 52%, #0b1020 100%);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: auto;
+      pointer-events: none;
+      z-index: 0;
+      border-radius: 999px;
+      filter: blur(90px);
+      opacity: 0.55;
+    }
+
+    body::before {
+      width: 240px;
+      height: 240px;
+      left: -50px;
+      top: 80px;
+      background: rgba(79, 124, 255, 0.18);
+    }
+
+    body::after {
+      width: 280px;
+      height: 280px;
+      right: -80px;
+      top: 200px;
+      background: rgba(255, 138, 91, 0.16);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      background: none;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .app-header {
+      display: grid;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      width: fit-content;
+      border: 1px solid rgba(125, 211, 252, 0.16);
+      background: rgba(8, 17, 31, 0.58);
+      color: #ffe8c7;
+      backdrop-filter: blur(18px);
+      font: 700 11px/1 "Space Mono", monospace;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #ff8a5b, #3dd9c5);
+      box-shadow: 0 0 20px rgba(255, 138, 91, 0.45);
+    }
+
+    .headline-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .headline h1 {
+      font-size: clamp(2rem, 4vw, 4rem);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      max-width: 10ch;
+    }
+
+    .headline p {
+      margin-top: 10px;
+      max-width: 52ch;
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.75;
+    }
+
+    .meta-strip {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .mono {
+      font-family: "Space Mono", monospace;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(21, 26, 41, 0.82);
+      color: #ffe9ca;
+      font: 700 11px/1 "Space Mono", monospace;
+      letter-spacing: 0.04em;
+      backdrop-filter: blur(14px);
+    }
+
+    .tabs {
+      position: sticky;
+      top: 12px;
+      z-index: 8;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      padding: 8px;
+      margin-bottom: 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(17, 23, 37, 0.78);
+      box-shadow: 0 18px 40px rgba(2, 8, 23, 0.26);
+      backdrop-filter: blur(18px);
+    }
+
+    .tab-btn {
+      min-height: 48px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      color: var(--muted-2);
+      transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+      font: 700 12px/1 "Space Mono", monospace;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .tab-btn:hover,
+    .tab-btn:focus-visible {
+      color: #f7fbff;
+      background: rgba(255, 255, 255, 0.06);
+      outline: none;
+    }
+
+    .tab-btn.active {
+      color: #ffffff;
+      background:
+        linear-gradient(135deg, rgba(255, 138, 91, 0.2), rgba(61, 217, 197, 0.14)),
+        rgba(255, 255, 255, 0.06);
+      transform: translateY(-1px);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+
+    .status-banner,
+    .card,
+    .hero {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(24px);
+    }
+
+    .status-banner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border-radius: 16px;
+    }
+
+    .status-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font: 700 11px/1 "Space Mono", monospace;
+      letter-spacing: 0.03em;
+    }
+
+    .ok {
+      color: #b8f6ce;
+      background: rgba(34, 197, 94, 0.14);
+      border-color: rgba(34, 197, 94, 0.18);
+    }
+
+    .warn {
+      color: #fdd08d;
+      background: rgba(245, 158, 11, 0.14);
+      border-color: rgba(245, 158, 11, 0.18);
+    }
+
+    .bad {
+      color: #fecaca;
+      background: rgba(239, 68, 68, 0.14);
+      border-color: rgba(239, 68, 68, 0.18);
+    }
+
+    .info {
+      color: #bae6fd;
+      background: rgba(56, 189, 248, 0.14);
+      border-color: rgba(56, 189, 248, 0.18);
+    }
+
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+      animation: rise 240ms ease;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      margin-bottom: 14px;
+      min-height: 280px;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.18), transparent 28%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 40%);
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+      gap: 18px;
+      align-items: end;
+      z-index: 1;
+    }
+
+    .hero-kicker {
+      font: 700 11px/1 "Space Mono", monospace;
+      letter-spacing: 0.18em;
+      opacity: 0.78;
+      text-transform: uppercase;
+    }
+
+    .score-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: end;
+      margin-top: 12px;
+    }
+
+    .score {
+      font-size: clamp(4rem, 10vw, 6rem);
+      line-height: 0.86;
+      letter-spacing: -0.06em;
+      font-weight: 700;
+    }
+
+    .regime {
+      font-size: clamp(1.1rem, 2vw, 1.45rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .hero-copy {
+      margin-top: 12px;
+      max-width: 42ch;
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 0.96rem;
+      line-height: 1.65;
+    }
+
+    .hero-meter {
+      margin-top: 18px;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.16);
+      overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+
+    .hero-meter > div {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(191, 219, 254, 0.75), rgba(255, 255, 255, 0.92));
+    }
+
+    .hero-scale {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      color: rgba(255, 255, 255, 0.72);
+      font: 700 10px/1 "Space Mono", monospace;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .hero-side {
+      display: grid;
+      gap: 10px;
+    }
+
+    .hero-stat {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(8, 14, 26, 0.24);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero-stat-label {
+      color: rgba(255, 255, 255, 0.72);
+      font: 700 10px/1.1 "Space Mono", monospace;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .hero-stat-value {
+      margin-top: 8px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .hero-stat-copy {
+      margin-top: 6px;
+      color: rgba(255, 255, 255, 0.76);
+      font-size: 0.85rem;
+      line-height: 1.45;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 0 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(9, 16, 29, 0.42);
+      color: #fff6ea;
+      font: 700 11px/1 "Space Mono", monospace;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: transform 180ms ease, background 180ms ease;
+    }
+
+    .btn:hover,
+    .btn:focus-visible {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.08);
+      outline: none;
+    }
+
+    .dashboard-grid,
+    .chart-grid,
+    .notes-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .dashboard-grid {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    }
+
+    .card {
+      border-radius: var(--radius);
+      padding: 20px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.025)),
+        var(--surface);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      color: #ffe7c8;
+      font: 700 11px/1 "Space Mono", monospace;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .section-subtitle {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .action-item,
+    .analog-row,
+    .note,
+    .mini,
+    .indicator-card {
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02));
+      border-radius: 16px;
+    }
+
+    .action-item,
+    .analog-row,
+    .note {
+      padding: 14px;
+    }
+
+    .action-item {
+      display: grid;
+      gap: 6px;
+    }
+
+    .action-title {
+      color: #f3f7fd;
+      font-weight: 700;
+      font-size: 0.96rem;
+    }
+
+    .action-copy {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+
+    .analog-head,
+    .split-row {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .analog-title {
+      font-size: 1.06rem;
+      font-weight: 700;
+    }
+
+    .analog-copy {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+
+    .analog-score {
+      text-align: right;
+      font: 700 1.3rem/1 "Space Mono", monospace;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .mini {
+      padding: 14px 12px;
+      text-align: center;
+      border: 1px solid rgba(255, 232, 204, 0.08);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02)),
+        rgba(16, 21, 34, 0.92);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+    }
+
+    button.mini {
+      width: 100%;
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    button.mini:hover,
+    button.mini:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(61, 217, 197, 0.28);
+      outline: none;
+    }
+
+    button.mini.is-active {
+      border-color: rgba(61, 217, 197, 0.55);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035), 0 0 0 1px rgba(61, 217, 197, 0.24);
+    }
+
+    .mini .t {
+      color: var(--muted-2);
+      font: 700 10px/1 "Space Mono", monospace;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .mini .v {
+      margin-top: 8px;
+      font: 700 1.1rem/1.2 "Sora", sans-serif;
+      color: #fff7ee;
+    }
+
+    .chart-grid .card {
+      border-radius: 24px;
+      border-color: rgba(255, 232, 204, 0.14);
+      background:
+        radial-gradient(circle at top right, rgba(61, 217, 197, 0.06), transparent 28%),
+        radial-gradient(circle at top left, rgba(255, 138, 91, 0.08), transparent 32%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
+        rgba(16, 21, 34, 0.94);
+    }
+
+    .indicator-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .indicator-card {
+      padding: 14px;
+      overflow: hidden;
+    }
+
+    .indicator-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .indicator-name {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .indicator-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      font-size: 1rem;
+    }
+
+    .indicator-name strong {
+      display: block;
+      font-size: 0.98rem;
+    }
+
+    .indicator-meta {
+      margin-top: 4px;
+      color: var(--muted-2);
+      font: 700 10px/1.2 "Space Mono", monospace;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font: 700 10px/1 "Space Mono", monospace;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .indicator-value {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .indicator-value strong {
+      font: 800 1.45rem/1 "Sora", sans-serif;
+    }
+
+    .indicator-value span {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .indicator-line {
+      height: 10px;
+      margin-top: 14px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .indicator-line > div {
+      height: 100%;
+      border-radius: inherit;
+    }
+
+    .indicator-action {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+
+    .source-line {
+      margin-top: 8px;
+      color: var(--muted-2);
+      font: 700 10px/1.2 "Space Mono", monospace;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .empty {
+      padding: 26px 18px;
+      text-align: center;
+      color: var(--muted);
+      border-radius: 18px;
+      border: 1px dashed rgba(148, 163, 184, 0.16);
+      background: rgba(255, 248, 240, 0.03);
+    }
+
+    .history-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .bar {
+      height: 10px;
+      margin-top: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .bar > div {
+      height: 100%;
+      border-radius: inherit;
+    }
+
+    .chart-wrap {
+      height: 360px;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 232, 204, 0.08);
+      background:
+        linear-gradient(180deg, rgba(9, 13, 24, 0.72), rgba(15, 19, 31, 0.92));
+    }
+
+    .chart-wrap.compact {
+      height: 220px;
+    }
+
+    .chart-note {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .comparison-panel {
+      margin-top: 14px;
+      padding: 16px 18px 12px;
+      border-radius: 22px;
+      background: #fbfbf8;
+      color: #1f2937;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    .comparison-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .comparison-title {
+      font: 800 1.2rem/1.15 "Sora", sans-serif;
+      color: #111827;
+    }
+
+    .comparison-copy {
+      margin-top: 4px;
+      color: #4b5563;
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    .comparison-tag {
+      color: #6b7280;
+      font: 700 10px/1 "Space Mono", monospace;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .comparison-chart {
+      height: 360px;
+    }
+
+    .comparison-foot {
+      margin-top: 10px;
+      color: #6b7280;
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .research-stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .research-card {
+      padding: 18px;
+      border-radius: 22px;
+      background: #fbfbf8;
+      color: #111827;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    .research-title {
+      font: 800 1.2rem/1.15 "Sora", sans-serif;
+      color: #111827;
+    }
+
+    .research-copy {
+      margin-top: 6px;
+      color: #4b5563;
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    .research-table {
+      width: 100%;
+      margin-top: 14px;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      min-width: 760px;
+    }
+
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: #ffffff;
+    }
+
+    .research-table th,
+    .research-table td {
+      padding: 10px 12px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      text-align: center;
+    }
+
+    .research-table th {
+      background: #eef4ff;
+      color: #1f2937;
+      font-weight: 700;
+    }
+
+    .research-table td:first-child,
+    .research-table th:first-child {
+      text-align: left;
+    }
+
+    .research-chart {
+      height: 360px;
+      margin-top: 14px;
+    }
+
+    .research-chart.tall {
+      height: 420px;
+    }
+
+    .seasonality-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .seasonality-meta {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .seasonality-meta .mini {
+      text-align: left;
+    }
+
+    .month-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .month-card {
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .month-name {
+      color: #f8fafc;
+      font: 700 12px/1 "Space Mono", monospace;
+    }
+
+    .month-main {
+      margin-top: 8px;
+      font: 700 1rem/1.1 "Sora", sans-serif;
+      color: #9ff3cf;
+    }
+
+    .month-sub {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    .notes-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .note-title {
+      font: 700 11px/1 "Space Mono", monospace;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #d7e7fd;
+    }
+
+    .note p {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .footer {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(125, 211, 252, 0.12);
+      background: rgba(8, 15, 28, 0.56);
+      color: #f2dfc4;
+      text-align: center;
+      font: 700 10px/1.2 "Space Mono", monospace;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 960px) {
+      .hero-grid,
+      .dashboard-grid,
+      .notes-grid,
+      .indicator-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .seasonality-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .headline-wrap {
+        align-items: start;
+      }
+
+      .meta-strip {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 16px 12px 28px;
+      }
+
+      .tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        top: 10px;
+      }
+
+      .hero,
+      .card {
+        padding: 16px;
+      }
+
+      .mini-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-wrap {
+        height: 300px;
+      }
+
+      .research-card {
+        padding: 14px;
+      }
+
+      .research-chart,
+      .research-chart.tall {
+        height: 320px;
+      }
+
+      .research-title {
+        font-size: 1.05rem;
+      }
+
+      .research-copy,
+      .comparison-copy,
+      .comparison-foot {
+        font-size: 0.88rem;
+      }
+
+      .month-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="eyebrow">
+        <span class="eyebrow-dot" aria-hidden="true"></span>
+        <span>Live Sentiment Console</span>
+      </div>
+      <div class="headline-wrap">
+        <div class="headline">
+          <h1>Market Temperature</h1>
+          <p>Fear, volatility, breadth, and positioning rolled into one readable regime dashboard. Built to stay useful even when upstream feeds fail.</p>
+        </div>
+        <div class="meta-strip">
+          <div class="chip">Fallback-safe UI</div>
+          <div class="chip">6 composite inputs</div>
+          <div class="chip">5-minute refresh cadence</div>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="Market Temperature views">
+      <button class="tab-btn active" id="tab-btn-dash" role="tab" aria-selected="true" aria-controls="tab-dash" data-tab="dash">Dashboard</button>
+      <button class="tab-btn" id="tab-btn-history" role="tab" aria-selected="false" aria-controls="tab-history" data-tab="history">History</button>
+      <button class="tab-btn" id="tab-btn-charts" role="tab" aria-selected="false" aria-controls="tab-charts" data-tab="charts">Charts / YTD</button>
+      <button class="tab-btn" id="tab-btn-notes" role="tab" aria-selected="false" aria-controls="tab-notes" data-tab="notes">Notes</button>
+    </nav>
+
+    <div id="app-status" aria-live="polite"></div>
+
+    <main>
+      <section id="tab-dash" class="section active" role="tabpanel" aria-labelledby="tab-btn-dash"></section>
+      <section id="tab-history" class="section" role="tabpanel" aria-labelledby="tab-btn-history"></section>
+      <section id="tab-charts" class="section" role="tabpanel" aria-labelledby="tab-btn-charts"></section>
+      <section id="tab-notes" class="section" role="tabpanel" aria-labelledby="tab-btn-notes"></section>
+    </main>
+
+    <footer class="footer">Auto-updating · stale-aware · fallback safe · not financial advice</footer>
+  </div>
+
+  <script>
+    const INDICATORS = [
+      { id: "fearGreed", name: "Fear & Greed", icon: "🧠", unit: "", min: 0, max: 100, inverse: false, thresholds: [{ mx: 20, label: "Extreme Fear", score: 5, color: "cold", action: "역발상 매수 구간." }, { mx: 40, label: "Fear", score: 25, color: "cool", action: "분할매수 우호적." }, { mx: 60, label: "Neutral", score: 50, color: "neutral", action: "기존 전략 유지." }, { mx: 80, label: "Greed", score: 75, color: "warm", action: "신규 추격매수 자제." }, { mx: 1e9, label: "Extreme Greed", score: 95, color: "hot", action: "이익실현·현금확대." }] },
+      { id: "vix", name: "VIX", icon: "⚡", unit: "", min: 10, max: 85, inverse: true, thresholds: [{ mx: 12, label: "Complacent", score: 85, color: "hot", action: "헤지 점검." }, { mx: 18, label: "Calm", score: 65, color: "warm", action: "과열 경계." }, { mx: 25, label: "Cautious", score: 40, color: "neutral", action: "중립 유지." }, { mx: 35, label: "Fearful", score: 20, color: "cool", action: "워치리스트 매수." }, { mx: 1e9, label: "Panic", score: 5, color: "cold", action: "패닉은 기회가 될 수 있음." }] },
+      { id: "rsi", name: "RSI 14d", icon: "🔄", unit: "", min: 15, max: 85, inverse: false, thresholds: [{ mx: 25, label: "Very Oversold", score: 5, color: "cold", action: "기술적 반등 가능." }, { mx: 35, label: "Oversold", score: 20, color: "cool", action: "매수 준비." }, { mx: 65, label: "Neutral", score: 50, color: "neutral", action: "추세 확인." }, { mx: 75, label: "Overbought", score: 75, color: "warm", action: "추격매수 자제." }, { mx: 1e9, label: "Very Overbought", score: 95, color: "hot", action: "부분 익절 고려." }] },
+      { id: "maDist", name: "Dist 200d MA", icon: "📏", unit: "%", min: -35, max: 18, inverse: false, thresholds: [{ mx: -12, label: "Crash", score: 3, color: "cold", action: "깊은 괴리, 우량주 분할매수." }, { mx: -5, label: "Oversold", score: 18, color: "cool", action: "평균회귀 구간." }, { mx: 5, label: "Normal", score: 45, color: "neutral", action: "포지션 유지." }, { mx: 12, label: "Extended", score: 75, color: "warm", action: "트레일링 스탑 점검." }, { mx: 1e9, label: "Blow-Off", score: 95, color: "hot", action: "추격매수 금지." }] },
+      { id: "putCall", name: "Put/Call", icon: "🧮", unit: "", min: 0.5, max: 1.3, inverse: true, thresholds: [{ mx: 0.6, label: "Call Heavy", score: 90, color: "hot", action: "옵션 낙관 과열." }, { mx: 0.8, label: "Bullish", score: 70, color: "warm", action: "과열 가능성 점검." }, { mx: 1.0, label: "Neutral", score: 50, color: "neutral", action: "중립." }, { mx: 1.15, label: "Fear", score: 25, color: "cool", action: "공포 상승." }, { mx: 1e9, label: "Panic Hedging", score: 8, color: "cold", action: "극단 공포 가능성." }] },
+      { id: "breadth", name: "% Above 50d", icon: "🫀", unit: "%", min: 5, max: 95, inverse: false, thresholds: [{ mx: 20, label: "Washed Out", score: 5, color: "cold", action: "광범위 과매도." }, { mx: 35, label: "Weak Breadth", score: 20, color: "cool", action: "추가 확인 필요." }, { mx: 65, label: "Balanced", score: 50, color: "neutral", action: "중립 breadth." }, { mx: 80, label: "Strong", score: 75, color: "warm", action: "강한 확산." }, { mx: 1e9, label: "Overextended", score: 95, color: "hot", action: "breadth 과열 경계." }] }
+    ];
+
+    const FALLBACKS = { fearGreed: 50, vix: 20, rsi: 50, maDist: 0, putCall: 0.9, breadth: 50 };
+    const ENDPOINTS = {
+      fearGreed: "/api/fear-greed",
+      vix: "/api/vix",
+      rsi: "/api/rsi",
+      maDist: "/api/ma-distance",
+      putCall: "/api/put-call",
+      breadth: "/api/breadth"
+    };
+
+    const PRESETS = [
+      { id: "dc02", n: "Dot-Com Bottom", d: "Oct 2002", e: "💀", desc: "Deep tech washout", c: "#2563eb", af: { m3: "+8%", m6: "+14%", y1: "+24%", n: "극단 공포 이후 회복." }, v: { fearGreed: 10, vix: 40, rsi: 22, maDist: -30, putCall: 1.1, breadth: 18 } },
+      { id: "gfc08", n: "GFC Crash", d: "Nov 2008", e: "📉", desc: "Lehman aftermath", c: "#1e40af", af: { m3: "-25%", m6: "+1%", y1: "+23%", n: "추가 하락 후 회복." }, v: { fearGreed: 5, vix: 80, rsi: 18, maDist: -38, putCall: 1.2, breadth: 10 } },
+      { id: "gfc09", n: "GFC Bottom", d: "Mar 2009", e: "🕳️", desc: "Major low", c: "#2563eb", af: { m3: "+36%", m6: "+51%", y1: "+68%", n: "강력한 반등 출발점." }, v: { fearGreed: 8, vix: 50, rsi: 20, maDist: -35, putCall: 1.08, breadth: 15 } },
+      { id: "cv20", n: "COVID Crash", d: "Mar 2020", e: "🦠", desc: "Pandemic liquidation", c: "#1e40af", af: { m3: "+30%", m6: "+46%", y1: "+75%", n: "급락 뒤 급반등." }, v: { fearGreed: 2, vix: 82, rsi: 16, maDist: -30, putCall: 1.05, breadth: 12 } },
+      { id: "cv21", n: "Post-COVID Mania", d: "Dec 2021", e: "🚀", desc: "Speculative peak", c: "#ef4444", af: { m3: "-8%", m6: "-20%", y1: "-19%", n: "탐욕 과열 이후 리셋." }, v: { fearGreed: 82, vix: 17, rsi: 70, maDist: 12, putCall: 0.62, breadth: 88 } },
+      { id: "br22", n: "2022 Bear Low", d: "Oct 2022", e: "🐻", desc: "Rate-shock bear low", c: "#38bdf8", af: { m3: "+8%", m6: "+15%", y1: "+21%", n: "깊은 공포 뒤 반등." }, v: { fearGreed: 15, vix: 33, rsi: 28, maDist: -15, putCall: 0.98, breadth: 28 } }
+    ];
+
+    const PLAYBOOK = [
+      { min: 0, max: 15, actions: ["현금에서 우량주로 점진 전환.", "3~5회 분할매수.", "레버리지는 자제."] },
+      { min: 15, max: 35, actions: ["선별 매수.", "breadth 개선 확인.", "추격보다 눌림 대기."] },
+      { min: 35, max: 65, actions: ["기존 포지션 유지.", "기대값 높은 것만 진입.", "현금 10~20% 유지."] },
+      { min: 65, max: 85, actions: ["수익 일부 실현.", "고베타 비중 축소.", "트레일링 스탑 점검."] },
+      { min: 85, max: 101, actions: ["디리스크.", "헤지 검토.", "FOMO 금지."] }
+    ];
+
+    const COLORS = {
+      hot: { bg: "#f43f5e", tx: "#ffffff" },
+      warm: { bg: "#fb923c", tx: "#ffffff" },
+      neutral: { bg: "#facc15", tx: "#111827" },
+      cool: { bg: "#06b6d4", tx: "#ffffff" },
+      cold: { bg: "#2563eb", tx: "#ffffff" }
+    };
+
+    const state = {
+      tab: "dash",
+      values: Object.fromEntries(INDICATORS.map((indicator) => [indicator.id, null])),
+      timestamps: {},
+      status: Object.fromEntries(INDICATORS.map((indicator) => [indicator.id, "idle"])),
+      errors: {},
+      sources: {},
+      staleFlags: {},
+      lastUpdated: null,
+      loading: false,
+      charts: {},
+      historyData: null
+    };
+
+    function clamp(n, min, max) {
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function fmt(value, unit = "") {
+      if (value == null || Number.isNaN(value)) return "—";
+      const numeric = Number(value);
+      return `${Number.isInteger(numeric) ? numeric : numeric.toFixed(2)}${unit}`;
+    }
+
+    function fmtDate(value) {
+      if (!value) return "—";
+      return new Date(value).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function getThreshold(indicator, value) {
+      if (value == null || Number.isNaN(value)) return null;
+      for (const threshold of indicator.thresholds) {
+        if (value <= threshold.mx) return threshold;
+      }
+      return indicator.thresholds.at(-1);
+    }
+
+    function normalizedRaw(indicator, value) {
+      if (value == null || Number.isNaN(value)) return null;
+      const scaled = ((value - indicator.min) / (indicator.max - indicator.min)) * 100;
+      const clamped = clamp(scaled, 0, 100);
+      return indicator.inverse ? 100 - clamped : clamped;
+    }
+
+    function normalizedBucket(indicator, value) {
+      const threshold = getThreshold(indicator, value);
+      return threshold ? threshold.score : null;
+    }
+
+    function composite(values) {
+      const scores = INDICATORS
+        .map((indicator) => normalizedBucket(indicator, values[indicator.id]))
+        .filter((value) => value != null);
+
+      if (!scores.length) return null;
+      return scores.reduce((sum, value) => sum + value, 0) / scores.length;
+    }
+
+    function regime(score) {
+      if (score == null) {
+        return {
+          label: "No Data",
+          view: "Waiting for live inputs",
+          grad: "linear-gradient(135deg, #334155, #475569, #64748b)",
+          accent: "#94a3b8"
+        };
+      }
+
+      if (score <= 15) {
+        return {
+          label: "Extreme Fear",
+          view: "공포 극대화 — 매수 준비 구간",
+          grad: "linear-gradient(135deg, #1d4ed8, #2563eb, #38bdf8)",
+          accent: "#93c5fd"
+        };
+      }
+
+      if (score <= 35) {
+        return {
+          label: "Oversold",
+          view: "공포 우세 — 분할매수 관찰",
+          grad: "linear-gradient(135deg, #0f766e, #06b6d4, #67e8f9)",
+          accent: "#a5f3fc"
+        };
+      }
+
+      if (score <= 65) {
+        return {
+          label: "Neutral",
+          view: "중립 — 프로세스 유지",
+          grad: "linear-gradient(135deg, #a16207, #f59e0b, #fcd34d)",
+          accent: "#fde68a"
+        };
+      }
+
+      if (score <= 85) {
+        return {
+          label: "Overheated",
+          view: "과열 — 차익실현 구간",
+          grad: "linear-gradient(135deg, #c2410c, #f97316, #fdba74)",
+          accent: "#fdba74"
+        };
+      }
+
+      return {
+        label: "Extreme Greed",
+        view: "탐욕 극단 — 디리스크",
+        grad: "linear-gradient(135deg, #be123c, #f43f5e, #fb7185)",
+        accent: "#fecdd3"
+      };
+    }
+
+    function getPlaybook(score) {
+      return PLAYBOOK.find((item) => score >= item.min && score < item.max) || PLAYBOOK.at(-1);
+    }
+
+    function cosineSimilarity(a, b) {
+      let dot = 0;
+      let magA = 0;
+      let magB = 0;
+
+      for (const indicator of INDICATORS) {
+        const valueA = normalizedRaw(indicator, a[indicator.id]);
+        const valueB = normalizedRaw(indicator, b[indicator.id]);
+        if (valueA == null || valueB == null) continue;
+        dot += valueA * valueB;
+        magA += valueA * valueA;
+        magB += valueB * valueB;
+      }
+
+      return magA && magB ? dot / (Math.sqrt(magA) * Math.sqrt(magB)) : 0;
+    }
+
+    function topAnalogs(values) {
+      return PRESETS
+        .map((preset) => ({ ...preset, sim: cosineSimilarity(values, preset.v) }))
+        .sort((a, b) => b.sim - a.sim)
+        .slice(0, 2);
+    }
+
+    function indicatorMeta(id) {
+      const status = state.status[id];
+      const stamp = state.timestamps[id] ? fmtDate(state.timestamps[id]) : "—";
+      if (status === "ok") return `Live · ${stamp}`;
+      if (status === "stale") return `Stale cache · ${stamp}`;
+      if (status === "fallback") return `Fallback · ${stamp}`;
+      if (status === "loading") return "Refreshing";
+      return "Waiting";
+    }
+
+    function indicatorBiasSummary() {
+      const score = composite(state.values);
+      if (score == null) return "No composite score yet";
+      if (score <= 20) return "Contrarian buy zone";
+      if (score <= 40) return "Fear-biased tape";
+      if (score <= 65) return "Balanced market";
+      if (score <= 85) return "Risk appetite extended";
+      return "Positioning looks overheated";
+    }
+
+    function buildYearlySeries(dates, closes) {
+      const years = new Map();
+
+      for (let index = 0; index < dates.length; index += 1) {
+        const date = new Date(dates[index]);
+        const year = date.getUTCFullYear();
+        if (!years.has(year)) years.set(year, []);
+        years.get(year).push({
+          date: dates[index],
+          close: closes[index]
+        });
+      }
+
+      return Array.from(years.entries())
+        .map(([year, rows]) => {
+          const base = rows[0]?.close;
+          return {
+            year,
+            rows,
+            normalized: rows.map((row) => (row.close / base) * 100),
+            returnPct: pctChange(base, rows.at(-1)?.close)
+          };
+        })
+        .filter((entry) => entry.rows.length > 20)
+        .sort((a, b) => a.year - b.year);
+    }
+
+    function averageSeries(seriesList, length) {
+      const result = [];
+      for (let index = 0; index < length; index += 1) {
+        const values = seriesList.map((series) => series[index]).filter((value) => value != null);
+        result.push(values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null);
+      }
+      return result;
+    }
+
+    function monthlyOutcomeStats(yearEntries, startMonth = 0) {
+      const monthNames = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
+      return monthNames
+        .map((name, month) => {
+          const returns = yearEntries.map((entry) => {
+            const rows = entry.rows.filter((row) => new Date(row.date).getUTCMonth() === month);
+            if (rows.length < 2) return null;
+            return pctChange(rows[0].close, rows.at(-1).close);
+          }).filter((value) => value != null);
+
+          if (!returns.length || month < startMonth) return null;
+
+          const avg = returns.reduce((sum, value) => sum + value, 0) / returns.length;
+          const upProb = (returns.filter((value) => value > 0).length / returns.length) * 100;
+          return { month, name, avg, upProb };
+        })
+        .filter(Boolean);
+    }
+
+    function buildSeasonalitySnapshot(history) {
+      if (!history || !Array.isArray(history.dates) || !Array.isArray(history.closes)) return null;
+      const yearlySeries = buildYearlySeries(history.dates, history.closes);
+      const currentYearSeries = yearlySeries.at(-1);
+      if (!currentYearSeries) return null;
+
+      const priorYears = yearlySeries.slice(0, -1);
+      const seasonalityLength = currentYearSeries.normalized.length;
+      const priorYearSameSpanReturns = priorYears
+        .filter((year) => year.rows.length >= seasonalityLength)
+        .map((year) => ({
+          year: year.year,
+          returnPct: pctChange(year.rows[0]?.close, year.rows[seasonalityLength - 1]?.close),
+          normalized: year.normalized.slice(0, seasonalityLength)
+        }));
+
+      const averageLookback = priorYearSameSpanReturns.slice(-10);
+      const bestPriorYear = priorYearSameSpanReturns.length
+        ? priorYearSameSpanReturns
+            .map((year) => ({
+              ...year,
+              similarity: cosine(
+                normalize100(currentYearSeries.normalized.slice(0, Math.max(5, currentYearSeries.normalized.length))),
+                normalize100(year.normalized.slice(0, Math.max(5, currentYearSeries.normalized.length)))
+              )
+            }))
+            .sort((a, b) => b.similarity - a.similarity)[0]
+        : null;
+
+      return {
+        yearlySeries,
+        currentYearSeries,
+        priorYears,
+        priorYearSameSpanReturns,
+        averageLookback,
+        bestPriorYear
+      };
+    }
+
+    function dataQualitySummary() {
+      const live = Object.values(state.status).filter((value) => value === "ok").length;
+      const stale = Object.values(state.status).filter((value) => value === "stale").length;
+      const fallback = Object.values(state.status).filter((value) => value === "fallback").length;
+      if (fallback) return `Fallback active on ${fallback} input${fallback > 1 ? "s" : ""}`;
+      if (stale) return `${stale} stale input${stale > 1 ? "s" : ""} being reused`;
+      if (live === INDICATORS.length) return "All inputs live";
+      return "Waiting for source updates";
+    }
+
+    async function fetchAll() {
+      state.loading = true;
+      renderStatus();
+
+      await Promise.allSettled(
+        Object.entries(ENDPOINTS).map(async ([id, url]) => {
+          state.status[id] = "loading";
+          try {
+            if (location.protocol === "file:") throw new Error("local file mode");
+            const response = await fetch(url, { cache: "no-store" });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            const value = Number(data.value);
+            if (Number.isNaN(value)) throw new Error("Invalid value");
+
+            state.values[id] = value;
+            state.timestamps[id] = data.updatedAt || new Date().toISOString();
+            state.sources[id] = data.source || "api";
+            state.staleFlags[id] = Boolean(data.stale);
+            state.status[id] = data.stale ? "stale" : "ok";
+            state.errors[id] = null;
+          } catch (error) {
+            const previousValue = state.values[id];
+            state.values[id] = previousValue ?? FALLBACKS[id];
+            state.timestamps[id] = state.timestamps[id] || new Date().toISOString();
+            state.sources[id] = previousValue != null ? "cached-local" : "hardcoded-fallback";
+            state.staleFlags[id] = true;
+            state.status[id] = previousValue != null ? "stale" : "fallback";
+            state.errors[id] = error.message || "fetch failed";
+          }
+        })
+      );
+
+      state.loading = false;
+      state.lastUpdated = new Date().toISOString();
+      renderAll();
+    }
+
+    function setActiveTab(tab) {
+      state.tab = tab;
+
+      document.querySelectorAll(".tab-btn").forEach((button) => {
+        const active = button.dataset.tab === tab;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-selected", String(active));
+        button.tabIndex = active ? 0 : -1;
+      });
+
+      document.querySelectorAll(".section").forEach((panel) => {
+        panel.classList.toggle("active", panel.id === `tab-${tab}`);
+      });
+
+      renderAll();
+    }
+
+    function bindTabs() {
+      const buttons = Array.from(document.querySelectorAll(".tab-btn"));
+
+      buttons.forEach((button, index) => {
+        button.addEventListener("click", () => {
+          setActiveTab(button.dataset.tab);
+        });
+
+        button.addEventListener("keydown", (event) => {
+          const currentIndex = buttons.indexOf(button);
+          if (event.key === "ArrowRight") {
+            event.preventDefault();
+            const next = buttons[(currentIndex + 1) % buttons.length];
+            next.focus();
+            setActiveTab(next.dataset.tab);
+          }
+          if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            const next = buttons[(currentIndex - 1 + buttons.length) % buttons.length];
+            next.focus();
+            setActiveTab(next.dataset.tab);
+          }
+          if (event.key === "Home") {
+            event.preventDefault();
+            buttons[0].focus();
+            setActiveTab(buttons[0].dataset.tab);
+          }
+          if (event.key === "End") {
+            event.preventDefault();
+            buttons.at(-1).focus();
+            setActiveTab(buttons.at(-1).dataset.tab);
+          }
+        });
+      });
+    }
+
+    function renderStatus() {
+      const live = Object.values(state.status).filter((value) => value === "ok").length;
+      const stale = Object.values(state.status).filter((value) => value === "stale").length;
+      const fallback = Object.values(state.status).filter((value) => value === "fallback").length;
+
+      document.getElementById("app-status").innerHTML = `
+        <div class="status-banner">
+          <div class="status-group">
+            <span class="pill ${state.loading ? "warn" : "ok"}">${state.loading ? "Refreshing" : "Auto refresh on"}</span>
+            <span class="pill info">${live}/${INDICATORS.length} live inputs</span>
+            ${stale ? `<span class="pill warn">${stale} stale</span>` : ""}
+            ${fallback ? `<span class="pill bad">${fallback} fallback</span>` : ""}
+          </div>
+          <div class="chip">Updated ${fmtDate(state.lastUpdated)}</div>
+        </div>
+      `;
+    }
+
+    function renderIndicatorCard(indicator) {
+      const value = state.values[indicator.id];
+      const threshold = getThreshold(indicator, value);
+      const color = threshold ? COLORS[threshold.color] : { bg: "#475569", tx: "#ffffff" };
+      const normalized = normalizedRaw(indicator, value);
+      const source = state.sources[indicator.id] || "—";
+
+      return `
+        <article class="indicator-card">
+          <div class="indicator-head">
+            <div class="indicator-name">
+              <span class="indicator-icon" aria-hidden="true">${indicator.icon}</span>
+              <div>
+                <strong>${indicator.name}</strong>
+                <div class="indicator-meta">${indicatorMeta(indicator.id)}</div>
+              </div>
+            </div>
+            <span class="badge" style="background:${color.bg};color:${color.tx}">${threshold ? threshold.label : "Unavailable"}</span>
+          </div>
+          <div class="indicator-value">
+            <strong>${fmt(value, indicator.unit)}</strong>
+            <span>${normalizedBucket(indicator, value) ?? "—"} / 100 regime score</span>
+          </div>
+          <div class="indicator-line">
+            <div style="width:${normalized == null ? 0 : normalized}%;background:${threshold ? color.bg : "#64748b"}"></div>
+          </div>
+          <div class="indicator-action">${threshold ? threshold.action : "이 입력값을 불러오지 못했습니다."}</div>
+          <div class="source-line">Source · ${source}</div>
+        </article>
+      `;
+    }
+
+    function renderDashboard() {
+      const score = composite(state.values);
+      const currentRegime = regime(score);
+      const playbook = getPlaybook(score ?? 50);
+      const [bestAnalog, runnerUp] = topAnalogs(state.values);
+      const seasonality = buildSeasonalitySnapshot(state.historyData);
+      const ytdAverage = seasonality?.averageLookback?.length
+        ? seasonality.averageLookback.reduce((sum, year) => sum + year.returnPct, 0) / seasonality.averageLookback.length
+        : null;
+
+      document.getElementById("tab-dash").innerHTML = `
+        <section class="hero" style="background:${currentRegime.grad}">
+          <div class="hero-grid">
+            <div>
+              <div class="hero-kicker">${state.lastUpdated ? `Live snapshot · ${fmtDate(state.lastUpdated)}` : "Waiting for data"}</div>
+              <div class="score-row">
+                <div class="score">${score == null ? "—" : Math.round(score)}</div>
+                <div>
+                  <div class="regime">${currentRegime.label}</div>
+                  <div class="hero-copy">→ ${currentRegime.view}</div>
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="btn" id="refreshBtn">${state.loading ? "Refreshing" : "Refresh data"}</button>
+                <div class="chip">${indicatorBiasSummary()}</div>
+              </div>
+              <div class="hero-meter" aria-hidden="true">
+                <div style="width:${score == null ? 0 : score}%"></div>
+              </div>
+              <div class="hero-scale">
+                <span>Fear</span>
+                <span>Neutral</span>
+                <span>Greed</span>
+              </div>
+            </div>
+            <div class="hero-side">
+              <div class="hero-stat">
+                <div class="hero-stat-label">Data quality</div>
+                <div class="hero-stat-value">${Object.values(state.status).filter((value) => value === "ok").length}/${INDICATORS.length}</div>
+                <div class="hero-stat-copy">${dataQualitySummary()}</div>
+              </div>
+              <div class="hero-stat">
+                <div class="hero-stat-label">Closest analog</div>
+                <div class="hero-stat-value">${bestAnalog ? bestAnalog.e + " " + bestAnalog.n : "—"}</div>
+                <div class="hero-stat-copy">${bestAnalog ? `${Math.round(bestAnalog.sim * 100)}% similarity · ${bestAnalog.d}` : "No analog available"}</div>
+              </div>
+              <div class="hero-stat">
+                <div class="hero-stat-label">Runner-up</div>
+                <div class="hero-stat-value">${runnerUp ? runnerUp.e + " " + runnerUp.n : "—"}</div>
+                <div class="hero-stat-copy">${runnerUp ? `${Math.round(runnerUp.sim * 100)}% similarity` : "Need more live data for a second match"}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="dashboard-grid">
+          <div class="stack">
+            <article class="card">
+              <div class="section-title">
+                <span>Action Playbook</span>
+                <span class="chip">${score == null ? "No score" : `${Math.round(score)} / 100`}</span>
+              </div>
+              <div class="section-subtitle">Keep the output actionable: three concrete portfolio behaviors based on the current regime.</div>
+              <div class="stack">
+                ${playbook.actions.map((action, index) => `
+                  <div class="action-item">
+                    <div class="action-title">${String(index + 1).padStart(2, "0")} · Next move</div>
+                    <div class="action-copy">${action}</div>
+                  </div>
+                `).join("")}
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="section-title">
+                <span>Analog Match</span>
+                <span class="chip">${bestAnalog ? `${Math.round(bestAnalog.sim * 100)}%` : "—"}</span>
+              </div>
+              ${bestAnalog && bestAnalog.sim > 0 ? `
+                <div class="analog-row">
+                  <div class="analog-head">
+                    <div>
+                      <div class="analog-title">${bestAnalog.e} ${bestAnalog.n}</div>
+                      <div class="analog-copy">${bestAnalog.d} · ${bestAnalog.desc}</div>
+                    </div>
+                    <div class="analog-score" style="color:${bestAnalog.sim > 0.8 ? "#fecaca" : bestAnalog.sim > 0.65 ? "#fde68a" : "#bae6fd"}">${Math.round(bestAnalog.sim * 100)}%</div>
+                  </div>
+                  <div class="mini-grid">
+                    <div class="mini"><div class="t">3M</div><div class="v">${bestAnalog.af.m3}</div></div>
+                    <div class="mini"><div class="t">6M</div><div class="v">${bestAnalog.af.m6}</div></div>
+                    <div class="mini"><div class="t">1Y</div><div class="v">${bestAnalog.af.y1}</div></div>
+                  </div>
+                  <div class="analog-copy" style="margin-top:12px">아래 차트는 지금 시장 상태와 이 과거 사례가 얼마나 비슷한지 겹쳐서 보여줍니다.</div>
+                  <div class="chart-wrap compact" style="margin-top:12px"><canvas id="analogMatchOverlay" aria-label="Current indicators versus analog overlay"></canvas></div>
+                  <div class="analog-copy">${bestAnalog.af.n}</div>
+                </div>
+              ` : `<div class="empty">Fallback values only. Once live values arrive, analog matching becomes more meaningful.</div>`}
+            </article>
+
+            <article class="card">
+              <div class="section-title">
+                <span>YTD Tracker</span>
+                <span class="chip">${seasonality?.currentYearSeries?.year ?? "—"}</span>
+              </div>
+              ${seasonality ? `
+                <div class="analog-row">
+                  <div class="analog-head">
+                    <div>
+                      <div class="analog-title">Current year vs prior years</div>
+                      <div class="analog-copy">
+                        ${seasonality.bestPriorYear
+                          ? `${seasonality.currentYearSeries.year} is tracking closest to ${seasonality.bestPriorYear.year} so far.`
+                          : "Not enough completed history for a strong same-span comparison yet."}
+                      </div>
+                    </div>
+                    <div class="analog-score" style="color:#86efac">${formatPct(seasonality.currentYearSeries.returnPct)}</div>
+                  </div>
+                  <div class="mini-grid">
+                    <div class="mini"><div class="t">Current YTD</div><div class="v">${formatPct(seasonality.currentYearSeries.returnPct)}</div></div>
+                    <div class="mini"><div class="t">10Y Avg</div><div class="v">${formatPct(ytdAverage)}</div></div>
+                    <div class="mini"><div class="t">Closest Year</div><div class="v">${seasonality.bestPriorYear ? seasonality.bestPriorYear.year : "—"}</div></div>
+                  </div>
+                  <div class="analog-copy">
+                    ${seasonality.bestPriorYear
+                      ? `Path similarity ${Math.round(seasonality.bestPriorYear.similarity * 100)}% through the same point in the year. Open Charts / YTD for the full overlay.`
+                      : "Open Charts / YTD for the full comparison chart."}
+                  </div>
+                </div>
+              ` : `<div class="empty">YTD tracker appears once Nasdaq history is loaded.</div>`}
+            </article>
+          </div>
+
+          <article class="card">
+            <div class="section-title">
+              <span>Indicator Board</span>
+              <span class="chip">${INDICATORS.length} signals</span>
+            </div>
+            <div class="section-subtitle">Each input keeps its own data status, source label, and regime bucket, so the dashboard stays trustworthy during outages.</div>
+            <div class="indicator-grid">
+              ${INDICATORS.map(renderIndicatorCard).join("")}
+            </div>
+          </article>
+        </div>
+      `;
+
+      if (state.charts.analogMatchOverlay) {
+        try {
+          state.charts.analogMatchOverlay.destroy();
+        } catch (error) {
+        }
+      }
+
+      if (bestAnalog && bestAnalog.sim > 0) {
+        const analogCanvas = document.getElementById("analogMatchOverlay");
+        if (analogCanvas) {
+          const labels = INDICATORS.map((indicator) => indicator.name);
+          const currentProfile = INDICATORS.map((indicator) => normalizedRaw(indicator, state.values[indicator.id]));
+          const analogProfile = INDICATORS.map((indicator) => normalizedRaw(indicator, bestAnalog.v[indicator.id]));
+
+          state.charts.analogMatchOverlay = new Chart(analogCanvas, {
+            type: "line",
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: "지금",
+                  data: currentProfile,
+                  borderColor: "#3dd9c5",
+                  backgroundColor: "rgba(61, 217, 197, 0.12)",
+                  borderWidth: 4,
+                  pointRadius: 4,
+                  pointHoverRadius: 5,
+                  pointBackgroundColor: "#3dd9c5",
+                  pointBorderColor: "#f8fafc",
+                  pointBorderWidth: 1.5,
+                  tension: 0.28,
+                  order: 2
+                },
+                {
+                  label: `${bestAnalog.n}`,
+                  data: analogProfile,
+                  borderColor: "#ff8a5b",
+                  backgroundColor: "rgba(255, 138, 91, 0.08)",
+                  borderWidth: 2.5,
+                  borderDash: [6, 5],
+                  pointRadius: 3,
+                  pointHoverRadius: 4,
+                  pointBackgroundColor: "#ff8a5b",
+                  pointBorderColor: "rgba(12, 18, 32, 0.9)",
+                  pointBorderWidth: 1,
+                  tension: 0.28,
+                  order: 1
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: { mode: "index", intersect: false },
+              plugins: {
+                legend: {
+                  labels: {
+                    color: "#f4e8d8",
+                    usePointStyle: true,
+                    boxWidth: 10,
+                    padding: 16
+                  }
+                },
+                tooltip: {
+                  backgroundColor: "rgba(13, 18, 29, 0.96)",
+                  titleColor: "#fff7ee",
+                  bodyColor: "#eadbc8",
+                  borderColor: "rgba(255, 232, 204, 0.12)",
+                  borderWidth: 1,
+                  callbacks: {
+                    label(context) {
+                      const value = context.parsed.y;
+                      if (value == null) return "";
+                      return `${context.dataset.label}: ${value.toFixed(0)} / 100`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  ticks: {
+                    color: "#b8a997",
+                    maxRotation: 0,
+                    autoSkip: false,
+                    callback(value, index) {
+                      const short = ["F&G", "VIX", "RSI", "200d", "P/C", "Breadth"];
+                      return short[index] || labels[index];
+                    }
+                  },
+                  grid: { display: false }
+                },
+                y: {
+                  min: 0,
+                  max: 100,
+                  ticks: {
+                    color: "#b8a997",
+                    callback(value) {
+                      return `${value}`;
+                    }
+                  },
+                  title: {
+                    display: true,
+                    text: "비슷한 정도",
+                    color: "#cdbba4"
+                  },
+                  grid: { color: "rgba(255, 232, 204, 0.08)" }
+                }
+              }
+            }
+          });
+        }
+      }
+
+      const refreshButton = document.getElementById("refreshBtn");
+      if (refreshButton) refreshButton.addEventListener("click", fetchAll);
+    }
+
+    function renderHistory() {
+      document.getElementById("tab-history").innerHTML = `
+        <article class="card">
+          <div class="section-title">
+            <span>Historical Scenarios</span>
+            <span class="chip">Preset library</span>
+          </div>
+          <div class="section-subtitle">These snapshots help anchor the current tape against memorable market regimes, from crash bottoms to speculative peaks.</div>
+          <div class="history-grid">
+            ${PRESETS.map((preset) => {
+              const score = composite(preset.v);
+              const similarity = cosineSimilarity(state.values, preset.v);
+              const color = score < 15 ? "#2563eb" : score < 35 ? "#06b6d4" : score < 65 ? "#facc15" : score < 85 ? "#fb923c" : "#f43f5e";
+              return `
+                <div class="analog-row">
+                  <div class="split-row">
+                    <div>
+                      <div class="analog-title">${preset.e} ${preset.n}</div>
+                      <div class="analog-copy">${preset.d} · ${preset.desc}</div>
+                    </div>
+                    <div class="analog-score" style="color:${color}">
+                      ${Math.round(score)}
+                      <div class="indicator-meta" style="margin-top:6px;color:${similarity > 0.8 ? "#fecaca" : similarity > 0.65 ? "#fde68a" : "#bae6fd"}">${Math.round(similarity * 100)}% similar</div>
+                    </div>
+                  </div>
+                  <div class="bar"><div style="width:${score}%;background:${color}"></div></div>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        </article>
+      `;
+    }
+
+    async function fetchNasdaqHistory() {
+      const makeFallbackHistory = () => {
+        const dates = [];
+        const closes = [];
+        let value = 100;
+
+        for (let index = 0; index < 2520; index += 1) {
+          const date = new Date();
+          date.setDate(date.getDate() - (2520 - index));
+          dates.push(date.toISOString().slice(0, 10));
+
+          const drift = 0.00045;
+          const cycle = Math.sin(index / 95) * 0.004 + Math.sin(index / 28) * 0.002;
+          const shock = index % 420 > 390 && index % 420 < 405 ? -0.012 : 0;
+          const noise = ((Math.sin(index * 12.9898) * 43758.5453) % 1 - 0.5) * 0.01;
+
+          value = Math.max(40, value * (1 + drift + cycle + shock + noise));
+          closes.push(Number(value.toFixed(2)));
+        }
+
+        return {
+          value: closes.at(-1),
+          dates,
+          closes,
+          source: "Local fallback synthetic history",
+          updatedAt: dates.at(-1),
+          stale: true,
+          fallbackUsed: true
+        };
+      };
+
+      const fetchFredCsvHistory = async () => {
+        const response = await fetch("https://fred.stlouisfed.org/graph/fredgraph.csv?id=NASDAQCOM", { cache: "no-store" });
+        if (!response.ok) throw new Error("FRED csv fetch failed");
+        const csv = await response.text();
+        const lines = csv.trim().split("\n").slice(1);
+        const dates = [];
+        const closes = [];
+
+        for (const line of lines) {
+          const [date, value] = line.split(",");
+          const numeric = Number(value);
+          if (!date || Number.isNaN(numeric)) continue;
+          dates.push(date);
+          closes.push(numeric);
+        }
+
+        if (closes.length < 800) throw new Error("FRED history too short");
+
+        return {
+          value: closes.at(-1),
+          dates,
+          closes,
+          source: "FRED / Nasdaq Daily Index Data",
+          updatedAt: dates.at(-1),
+          stale: false,
+          fallbackUsed: false
+        };
+      };
+
+      try {
+        try {
+          return await fetchFredCsvHistory();
+        } catch (error) {
+        }
+
+        if (location.protocol === "file:") return makeFallbackHistory();
+        const response = await fetch("/api/nasdaq-history", { cache: "no-store" });
+        if (!response.ok) throw new Error("history fetch failed");
+        const data = await response.json();
+        if (!data || !Array.isArray(data.closes) || !data.closes.length) throw new Error("invalid history payload");
+        return data;
+      } catch (error) {
+        return makeFallbackHistory();
+      }
+    }
+
+    function normalize100(values) {
+      const base = values[0];
+      return values.map((value) => (value / base) * 100);
+    }
+
+    function cosine(a, b) {
+      let dot = 0;
+      let magA = 0;
+      let magB = 0;
+
+      for (let index = 0; index < a.length; index += 1) {
+        dot += a[index] * b[index];
+        magA += a[index] * a[index];
+        magB += b[index] * b[index];
+      }
+
+      return dot / (Math.sqrt(magA) * Math.sqrt(magB));
+    }
+
+    function pctChange(start, end) {
+      if (start == null || end == null || start === 0) return null;
+      return ((end / start) - 1) * 100;
+    }
+
+    function formatPct(value) {
+      if (value == null || Number.isNaN(value)) return "—";
+      const sign = value > 0 ? "+" : "";
+      return `${sign}${value.toFixed(1)}%`;
+    }
+
+    function maxDrawdown(series) {
+      let peak = -Infinity;
+      let worst = 0;
+      for (const value of series) {
+        if (value > peak) peak = value;
+        const drawdown = ((value / peak) - 1) * 100;
+        if (drawdown < worst) worst = drawdown;
+      }
+      return worst;
+    }
+
+    function analogStrengthLabel(similarity) {
+      if (similarity >= 90) return "Exceptional analog";
+      if (similarity >= 82) return "High-confidence analog";
+      if (similarity >= 72) return "Usable analog";
+      return "Loose analog";
+    }
+
+    function detectEventLabel(dateString) {
+      if (!dateString) return "Historical analog";
+      const year = new Date(dateString).getUTCFullYear();
+      if (year === 2002) return "Dot-com washout recovery";
+      if (year === 2008 || year === 2009) return "Global Financial Crisis aftermath";
+      if (year === 2020) return "COVID crash aftermath";
+      if (year === 2022) return "Rate shock bear-market aftermath";
+      return "Historical analog";
+    }
+
+    function nearestDateIndex(dates, targetDate) {
+      const target = new Date(targetDate).getTime();
+      let bestIndex = -1;
+      let bestDelta = Infinity;
+      for (let index = 0; index < dates.length; index += 1) {
+        const delta = Math.abs(new Date(dates[index]).getTime() - target);
+        if (delta < bestDelta) {
+          bestDelta = delta;
+          bestIndex = index;
+        }
+      }
+      return bestIndex;
+    }
+
+    function businessDayOffset(startDateString, endDateString) {
+      const start = new Date(startDateString);
+      const end = new Date(endDateString);
+      let count = 0;
+      const cursor = new Date(start);
+
+      while (cursor < end) {
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+        const day = cursor.getUTCDay();
+        if (day !== 0 && day !== 6) count += 1;
+      }
+
+      return count;
+    }
+
+    function findRangeExtrema(series, startIndex = 0) {
+      let min = { index: startIndex, value: Infinity };
+      let max = { index: startIndex, value: -Infinity };
+
+      for (let index = startIndex; index < series.length; index += 1) {
+        const value = series[index];
+        if (value == null) continue;
+        if (value < min.value) min = { index, value };
+        if (value > max.value) max = { index, value };
+      }
+
+      return { min, max };
+    }
+
+    function describeAnalogPath(result, extrema) {
+      const lowAfterDays = extrema.min.index - (result.currentSpan - 1);
+      const highAfterDays = extrema.max.index - (result.currentSpan - 1);
+      const lowText = lowAfterDays > 0 ? `${lowAfterDays} 거래일 뒤 저점` : "현재 부근 저점";
+      const highText = highAfterDays > 0 ? `${highAfterDays} 거래일 뒤 고점` : "현재 부근 고점";
+      return `현재와 가장 닮은 과거 구간은 ${result.analogStart} 시작 2년입니다. 그 과거 경로에서는 이후 ${lowText}, ${highText}가 나타났습니다.`;
+    }
+
+    function shortDate(dateString) {
+      if (!dateString) return "—";
+      return dateString.slice(0, 10);
+    }
+
+    function findYearStartAnalog(series, dates, targetYear, totalWindowDays = 504) {
+      return findYearStartAnalogs(series, dates, targetYear, totalWindowDays, 1).best;
+    }
+
+    function findYearStartAnalogs(series, dates, targetYear, totalWindowDays = 504, limit = 3) {
+      const currentStartIndex = dates.findIndex((date) => new Date(date).getUTCFullYear() === targetYear);
+      if (currentStartIndex === -1) throw new Error("Current year start not found");
+
+      const currentSpan = series.length - currentStartIndex;
+      if (currentSpan < 20) throw new Error("Not enough current-year history");
+
+      const currentSegment = series.slice(currentStartIndex);
+      const currentNorm = normalize100(currentSegment);
+      const candidates = [];
+
+      for (let start = 0; start <= currentStartIndex - totalWindowDays; start += 1) {
+        const candidate = series.slice(start, start + totalWindowDays);
+        if (candidate.length < totalWindowDays) continue;
+
+        const candidateNorm = normalize100(candidate.slice(0, currentSpan));
+        const similarity = cosine(currentNorm, candidateNorm);
+        candidates.push({
+          similarity,
+          start,
+          currentStartIndex,
+          currentSpan,
+          candidate,
+          candidateNorm,
+          fullNorm: normalize100(candidate),
+          matchStart: dates[start],
+          matchEnd: dates[start + currentSpan - 1],
+          fullEnd: dates[start + totalWindowDays - 1]
+        });
+      }
+
+      if (!candidates.length) throw new Error("No 2-year analog found");
+
+      const selected = [];
+      const minGap = Math.max(60, Math.floor(currentSpan * 0.6));
+
+      for (const candidate of candidates.sort((a, b) => b.similarity - a.similarity)) {
+        const tooClose = selected.some((picked) => Math.abs(picked.start - candidate.start) < minGap);
+        if (tooClose) continue;
+        selected.push(candidate);
+        if (selected.length >= limit) break;
+      }
+
+      const decorate = (match) => ({
+        targetYear,
+        currentStartDate: dates[currentStartIndex],
+        currentDate: dates.at(-1),
+        currentStartIndex,
+        currentNorm,
+        currentSpan,
+        similarity: Math.round(match.similarity * 100),
+        analogLabel: detectEventLabel(match.matchStart),
+        analogStartIndex: match.start,
+        analogStart: match.matchStart,
+        analogMatchEnd: match.matchEnd,
+        analogFullEnd: match.fullEnd,
+        analogNormCurrentSpan: match.candidateNorm,
+        analogNormFull: match.fullNorm,
+        projectedFullReturn: pctChange(match.candidate[0], match.candidate.at(-1)),
+        realizedCurrentReturn: pctChange(currentSegment[0], currentSegment.at(-1))
+      });
+
+      return {
+        best: decorate(selected[0]),
+        matches: selected.map(decorate),
+        historyStart: dates[0]
+      };
+    }
+
+    function findBestAnalog(series, dates, lookbackDays = 504, matchDays = 126, forwardDays = 252) {
+      const currentTwoYears = series.slice(-lookbackDays);
+      const currentMatch = normalize100(currentTwoYears.slice(-matchDays));
+      let best = null;
+
+      for (let start = 0; start < series.length - lookbackDays - forwardDays - 5; start += 1) {
+        const pastTwoYears = series.slice(start, start + lookbackDays);
+        const pastMatch = normalize100(pastTwoYears.slice(-matchDays));
+        const similarity = cosine(currentMatch, pastMatch);
+
+        if (!best || similarity > best.sim) {
+          best = {
+            sim: similarity,
+            start,
+            end: start + lookbackDays - 1,
+            pastTwoYears,
+            forwardOneYear: series.slice(start + lookbackDays, start + lookbackDays + forwardDays)
+          };
+        }
+      }
+
+      if (!best) throw new Error("No analog found");
+
+      return {
+        similarity: Math.round(best.sim * 100),
+        analogStart: dates[best.start],
+        analogEnd: dates[best.end],
+        currentTwoYears,
+        pastTwoYears: best.pastTwoYears,
+        forwardOneYear: best.forwardOneYear
+      };
+    }
+
+    function getElectionDay(year) {
+      const date = new Date(Date.UTC(year, 10, 1));
+      while (date.getUTCDay() !== 1) {
+        date.setUTCDate(date.getUTCDate() + 1);
+      }
+      date.setUTCDate(date.getUTCDate() + 1);
+      return date.toISOString().slice(0, 10);
+    }
+
+    function rangeReturn(dates, closes, startDate, endDate) {
+      const startIndex = nearestDateIndex(dates, startDate);
+      const endIndex = nearestDateIndex(dates, endDate);
+      if (startIndex < 0 || endIndex < 0 || endIndex <= startIndex) return null;
+      return pctChange(closes[startIndex], closes[endIndex]);
+    }
+
+    function averageNumber(values) {
+      const valid = values.filter((value) => value != null && !Number.isNaN(value));
+      if (!valid.length) return null;
+      return valid.reduce((sum, value) => sum + value, 0) / valid.length;
+    }
+
+    function stdDev(values) {
+      const valid = values.filter((value) => value != null && !Number.isNaN(value));
+      if (valid.length < 2) return null;
+      const avg = averageNumber(valid);
+      const variance = valid.reduce((sum, value) => sum + ((value - avg) ** 2), 0) / valid.length;
+      return Math.sqrt(variance);
+    }
+
+    function eventWindowSeries(dates, closes, centerDate, beforeDays = 126, afterDays = 126) {
+      const centerIndex = nearestDateIndex(dates, centerDate);
+      if (centerIndex < beforeDays) return null;
+      const startIndex = centerIndex - beforeDays;
+      const endIndex = Math.min(centerIndex + afterDays, closes.length - 1);
+      const window = closes.slice(startIndex, endIndex + 1);
+      const base = closes[centerIndex];
+      const normalized = window.map((value) => (value / base) * 100);
+      while (normalized.length < beforeDays + afterDays + 1) normalized.push(null);
+      return normalized;
+    }
+
+    async function renderCharts() {
+      const container = document.getElementById("tab-charts");
+      container.innerHTML = `
+        <div class="research-stack">
+          <article class="research-card">
+            <div class="research-title">Nasdaq midterm return summary</div>
+            <div class="research-copy" id="summarySourceNote">예시 표처럼, 전체 해와 중간선거 해 전후 수익률을 한 번에 요약합니다.</div>
+            <div class="table-scroll">
+              <table class="research-table" id="midtermSummaryTable"></table>
+            </div>
+          </article>
+
+          <article class="research-card">
+            <div class="research-title">Midterm seasonality table</div>
+            <div class="research-copy" id="seasonalitySourceNote">각 중간선거 해에서 선거 전과 선거 후가 실제로 어땠는지 연도별로 보여줍니다.</div>
+            <div class="seasonality-grid">
+              <div class="table-scroll">
+                <table class="research-table" id="midtermSeasonalityTable"></table>
+              </div>
+              <div class="seasonality-meta" id="midtermSeasonalityMeta"></div>
+            </div>
+          </article>
+
+          <article class="research-card">
+            <div class="research-title">Historical midterm returns</div>
+            <div class="research-copy" id="historicalReturnsNote">과거 각 중간선거 해의 실제 수익률을 차트로 보여줍니다.</div>
+            <div class="research-chart"><canvas id="historicalReturnsChart" aria-label="Historical midterm returns chart"></canvas></div>
+          </article>
+
+          <article class="research-card">
+            <div class="research-title">Nasdaq average annual performance</div>
+            <div class="research-copy" id="annualChartNote"></div>
+            <div class="research-chart"><canvas id="midtermAnnualChart" aria-label="Nasdaq annual midterm performance"></canvas></div>
+          </article>
+
+          <article class="research-card">
+            <div class="research-title">Before and after midterm elections</div>
+            <div class="research-copy" id="beforeAfterNote"></div>
+            <div class="research-chart tall"><canvas id="beforeAfterChart" aria-label="Nasdaq before and after midterm elections"></canvas></div>
+          </article>
+        </div>
+      `;
+
+      try {
+        const history = state.historyData || await fetchNasdaqHistory();
+        state.historyData = history;
+
+        if (!history || !Array.isArray(history.closes) || history.closes.length < 800) {
+          throw new Error("Not enough history");
+        }
+
+        const yearlySeries = buildYearlySeries(history.dates, history.closes);
+        const completedYears = yearlySeries.filter((entry) => entry.year < 2026);
+        const allYears = completedYears.filter((entry) => entry.returnPct != null);
+        const allYears1980 = allYears.filter((entry) => entry.year >= 1980);
+        const midtermYears = completedYears.filter((entry) => entry.year % 4 === 2);
+        const midtermYears1980 = midtermYears.filter((entry) => entry.year >= 1980);
+        const allOtherYears1980 = allYears1980.filter((entry) => entry.year % 4 !== 2);
+        const currentYear = yearlySeries.find((entry) => entry.year === 2026);
+        const sourceNote = `${history.source || "Data source"} · through ${history.updatedAt || "latest available date"}${history.fallbackUsed ? " · fallback mode" : ""}`;
+
+        Object.values(state.charts).forEach((chart) => {
+          try {
+            chart.destroy();
+          } catch (error) {
+          }
+        });
+
+        const pre12Midterm = midtermYears.map((entry) => rangeReturn(
+          history.dates,
+          history.closes,
+          new Date(new Date(getElectionDay(entry.year)).getTime() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+          getElectionDay(entry.year)
+        ));
+        const post12Midterm = midtermYears
+          .filter((entry) => entry.year < 2025)
+          .map((entry) => rangeReturn(
+            history.dates,
+            history.closes,
+            getElectionDay(entry.year),
+            new Date(new Date(getElectionDay(entry.year)).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+          ));
+        const mayOctReturns = midtermYears.map((entry) => rangeReturn(history.dates, history.closes, `${entry.year}-05-01`, `${entry.year}-10-31`));
+        const novAprReturns = midtermYears
+          .filter((entry) => entry.year < 2025)
+          .map((entry) => rangeReturn(history.dates, history.closes, `${entry.year}-11-01`, `${entry.year + 1}-04-30`));
+
+        document.getElementById("midtermSummaryTable").innerHTML = `
+          <thead>
+            <tr>
+              <th>Measure</th>
+              <th>All Years</th>
+              <th>12M Before Election</th>
+              <th>Midterm May-Oct</th>
+              <th>12M After Election</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Return (${allYears[0]?.year}-${allYears.at(-1)?.year})</td>
+              <td>${formatPct(averageNumber(allYears.map((entry) => entry.returnPct)))}</td>
+              <td>${formatPct(averageNumber(pre12Midterm))}</td>
+              <td>${formatPct(averageNumber(mayOctReturns))}</td>
+              <td>${formatPct(averageNumber(post12Midterm))}</td>
+            </tr>
+            <tr>
+              <td>Return (1980-${allYears1980.at(-1)?.year ?? "—"})</td>
+              <td>${formatPct(averageNumber(allYears1980.map((entry) => entry.returnPct)))}</td>
+              <td>${formatPct(averageNumber(midtermYears1980.map((entry) => rangeReturn(
+                history.dates,
+                history.closes,
+                new Date(new Date(getElectionDay(entry.year)).getTime() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+                getElectionDay(entry.year)
+              ))))}</td>
+              <td>${formatPct(averageNumber(midtermYears1980.map((entry) => rangeReturn(history.dates, history.closes, `${entry.year}-05-01`, `${entry.year}-10-31`))))}</td>
+              <td>${formatPct(averageNumber(midtermYears1980.filter((entry) => entry.year < 2025).map((entry) => rangeReturn(
+                history.dates,
+                history.closes,
+                getElectionDay(entry.year),
+                new Date(new Date(getElectionDay(entry.year)).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+              ))))}</td>
+            </tr>
+          </tbody>
+        `;
+        document.getElementById("summarySourceNote").textContent = `Source: ${sourceNote}. Periods used here are: all calendar years, 12 months before each midterm election day, May 1 to October 31 of each midterm year, and 12 months after each midterm election day.`;
+
+        const seasonalityRows = midtermYears.map((entry) => ({
+          year: entry.year,
+          mayOct: rangeReturn(history.dates, history.closes, `${entry.year}-05-01`, `${entry.year}-10-31`),
+          novApr: entry.year < 2025 ? rangeReturn(history.dates, history.closes, `${entry.year}-11-01`, `${entry.year + 1}-04-30`) : null
+        }));
+
+        document.getElementById("midtermSeasonalityTable").innerHTML = `
+          <thead>
+            <tr>
+              <th>Midterm Year</th>
+              <th>May-Oct</th>
+              <th>Nov-Apr</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${seasonalityRows.map((row) => `
+              <tr>
+                <td>${row.year}</td>
+                <td>${formatPct(row.mayOct)}</td>
+                <td>${formatPct(row.novApr)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        `;
+        document.getElementById("seasonalitySourceNote").textContent = `Source: ${sourceNote}. Each row is one midterm year. May-Oct means May 1 to October 31 of that year. Nov-Apr means November 1 of that year to April 30 of the next year.`;
+        document.getElementById("historicalReturnsNote").textContent = `Source: ${sourceNote}. Blue bars show May 1 to October 31 of each midterm year. Purple bars show November 1 of that year to April 30 of the next year.`;
+
+        document.getElementById("midtermSeasonalityMeta").innerHTML = `
+          <div class="mini"><div class="t">Average May-Oct</div><div class="v">${formatPct(averageNumber(seasonalityRows.map((row) => row.mayOct)))}</div></div>
+          <div class="mini"><div class="t">Average Nov-Apr</div><div class="v">${formatPct(averageNumber(seasonalityRows.map((row) => row.novApr)))}</div></div>
+          <div class="mini"><div class="t">Std Dev Nov-Apr</div><div class="v">${formatPct(stdDev(seasonalityRows.map((row) => row.novApr)))}</div></div>
+          <div class="mini"><div class="t">Positive Nov-Apr</div><div class="v">${seasonalityRows.filter((row) => row.novApr != null && row.novApr > 0).length}</div></div>
+        `;
+
+        state.charts.historicalReturns = new Chart(document.getElementById("historicalReturnsChart"), {
+          type: "bar",
+          data: {
+            labels: seasonalityRows.map((row) => String(row.year)),
+            datasets: [
+              {
+                label: "May-Oct of each midterm year",
+                data: seasonalityRows.map((row) => row.mayOct),
+                backgroundColor: "#2f6fed"
+              },
+              {
+                label: "Nov-Apr after that midterm",
+                data: seasonalityRows.map((row) => row.novApr),
+                backgroundColor: "#6d28d9"
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: { color: "#374151" }
+              },
+              tooltip: {
+                callbacks: {
+                  label(context) {
+                    const value = context.parsed.y;
+                    if (value == null) return "";
+                    return `${context.dataset.label}: ${value.toFixed(1)}%`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                ticks: { color: "#6b7280" },
+                title: {
+                  display: true,
+                  text: "Midterm election year",
+                  color: "#6b7280"
+                },
+                grid: { display: false }
+              },
+              y: {
+                ticks: {
+                  color: "#6b7280",
+                  callback(value) {
+                    return `${value}%`;
+                  }
+                },
+                title: {
+                  display: true,
+                  text: "Return over the labeled period",
+                  color: "#6b7280"
+                },
+                grid: { color: "rgba(15, 23, 42, 0.06)" }
+              }
+            }
+          }
+        });
+
+        const annualBaseYears = yearlySeries.filter((entry) => entry.year >= 1980);
+        const completeAnnualYears = annualBaseYears.filter((entry) => entry.year < 2026);
+        const commonLen = Math.min(...completeAnnualYears.map((entry) => entry.normalized.length));
+        const midtermAnnualSeries = averageSeries(
+          completeAnnualYears.filter((entry) => entry.year % 4 === 2).map((entry) => entry.normalized.slice(0, commonLen)),
+          commonLen
+        );
+        const otherAnnualSeries = averageSeries(
+          completeAnnualYears.filter((entry) => entry.year % 4 !== 2).map((entry) => entry.normalized.slice(0, commonLen)),
+          commonLen
+        );
+        const currentAnnualSeries = currentYear ? currentYear.normalized.map((value) => value) : [];
+        const electionIndex2026 = currentYear ? nearestDateIndex(currentYear.rows.map((row) => row.date), getElectionDay(2026)) : -1;
+        const annualLabels = Array.from({ length: commonLen }, (_, index) => {
+          if (index === 0) return "Jan";
+          if (index === 42) return "Mar";
+          if (index === 84) return "May";
+          if (index === 126) return "Jul";
+          if (index === 168) return "Sep";
+          if (index === 210) return "Nov";
+          if (index === commonLen - 1) return "Jan";
+          return "";
+        });
+
+        document.getElementById("annualChartNote").textContent = `Source: ${sourceNote}. Gray = average path for non-midterm years from 1980 to ${allYears1980.at(-1)?.year ?? "latest"}. Navy = average path for midterm years from 1982 to ${midtermYears1980.at(-1)?.year ?? "latest"}. Red = 2026 year-to-date path. Election day marker is ${getElectionDay(2026)}.`;
+
+        state.charts.annual = new Chart(document.getElementById("midtermAnnualChart"), {
+          type: "line",
+          plugins: [{
+            id: "electionMarker",
+            afterDatasetsDraw(chart) {
+              if (electionIndex2026 < 0) return;
+              const { ctx, chartArea, scales } = chart;
+              const x = scales.x.getPixelForValue(Math.min(electionIndex2026, commonLen - 1));
+              ctx.save();
+              ctx.strokeStyle = "rgba(17, 24, 39, 0.45)";
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.moveTo(x, chartArea.top);
+              ctx.lineTo(x, chartArea.bottom);
+              ctx.stroke();
+              ctx.fillStyle = "#374151";
+              ctx.font = '700 11px "Space Mono"';
+              ctx.fillText("Election day", Math.min(x + 6, chartArea.right - 90), chartArea.bottom - 10);
+              ctx.restore();
+            }
+          }],
+          data: {
+            labels: annualLabels,
+            datasets: [
+              {
+                label: `All other years average (1980-${allYears1980.at(-1)?.year ?? "latest"})`,
+                data: otherAnnualSeries,
+                borderColor: "#c7c9cf",
+                borderWidth: 2.2,
+                pointRadius: 0,
+                tension: 0.18
+              },
+              {
+                label: `Midterm years average (1982-${midtermYears1980.at(-1)?.year ?? "latest"})`,
+                data: midtermAnnualSeries,
+                borderColor: "#1f355b",
+                borderWidth: 2.6,
+                pointRadius: 0,
+                tension: 0.18
+              },
+              {
+                label: `2026 (${currentYear?.rows?.[0]?.date ?? "2026-01-01"} to ${history.updatedAt || "latest"})`,
+                data: currentAnnualSeries,
+                borderColor: "#ef4444",
+                borderWidth: 2.6,
+                pointRadius: 0,
+                tension: 0.18
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: {
+                  color: "#374151"
+                }
+              }
+            },
+            scales: {
+              x: {
+                ticks: { color: "#6b7280" },
+                title: {
+                  display: true,
+                  text: `Calendar progression in 2026 (Jan 1, 2026 to Dec 31, 2026)`,
+                  color: "#6b7280"
+                },
+                grid: { display: false }
+              },
+              y: {
+                ticks: { color: "#6b7280" },
+                title: {
+                  display: true,
+                  text: "Indexed level (start of year = 100)",
+                  color: "#6b7280"
+                },
+                grid: { color: "rgba(15, 23, 42, 0.06)" }
+              }
+            }
+          }
+        });
+
+        const eventYears = midtermYears.filter((entry) => entry.year >= 1994 && entry.year < 2026);
+        const beforeDays = 126;
+        const afterDays = 168;
+        const eventSeries = eventYears
+          .map((entry) => ({
+            year: entry.year,
+            series: eventWindowSeries(history.dates, history.closes, getElectionDay(entry.year), beforeDays, afterDays)
+          }))
+          .filter((item) => item.series);
+        const avgEventSeries = averageSeries(eventSeries.map((item) => item.series), beforeDays + afterDays + 1);
+        const currentEventSeries = eventWindowSeries(history.dates, history.closes, getElectionDay(2026), beforeDays, afterDays);
+        const eventLabels = Array.from({ length: beforeDays + afterDays + 1 }, (_, index) => {
+          if (index === 0) return "May";
+          if (index === 42) return "Jul";
+          if (index === 84) return "Sep";
+          if (index === beforeDays) return "Nov";
+          if (index === beforeDays + 42) return "Jan";
+          if (index === beforeDays + 84) return "Mar";
+          if (index === beforeDays + 126) return "May";
+          return "";
+        });
+
+        document.getElementById("beforeAfterNote").textContent = `Source: ${sourceNote}. Each line is indexed to 100 on election day. Window shown: about 6 months before election day to about 8 months after. Average uses midterm elections from 1994 through 2022. The 2026 line is aligned to election day ${getElectionDay(2026)}.`;
+
+        state.charts.beforeAfter = new Chart(document.getElementById("beforeAfterChart"), {
+          type: "line",
+          plugins: [{
+            id: "midtermLine",
+            afterDatasetsDraw(chart) {
+              const { ctx, chartArea, scales } = chart;
+              const x = scales.x.getPixelForValue(beforeDays);
+              ctx.save();
+              ctx.strokeStyle = "rgba(17, 24, 39, 0.55)";
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.moveTo(x, chartArea.top);
+              ctx.lineTo(x, chartArea.bottom);
+              ctx.stroke();
+              ctx.fillStyle = "#111827";
+              ctx.font = '700 12px "Sora"';
+              ctx.fillText("Midterm elections", Math.max(chartArea.left + 8, x - 70), chartArea.top + 18);
+              ctx.restore();
+            }
+          }],
+          data: {
+            labels: eventLabels,
+            datasets: [
+              {
+                label: "Average of midterm election windows (1994-2022)",
+                data: avgEventSeries,
+                borderColor: "#4328a5",
+                borderWidth: 4,
+                pointRadius: 0,
+                tension: 0.18
+              },
+              ...(currentEventSeries ? [{
+                label: `2026 window (around ${getElectionDay(2026)})`,
+                data: currentEventSeries,
+                borderColor: "#ef4444",
+                borderWidth: 2.4,
+                pointRadius: 0,
+                tension: 0.18
+              }] : [])
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: {
+                  color: "#374151"
+                }
+              }
+            },
+            scales: {
+              x: {
+                ticks: { color: "#6b7280" },
+                title: {
+                  display: true,
+                  text: "Relative timeline around each midterm election (May before election to April/May after election)",
+                  color: "#6b7280"
+                },
+                grid: { display: false }
+              },
+              y: {
+                ticks: { color: "#6b7280" },
+                title: {
+                  display: true,
+                  text: "Indexed level (election day = 100)",
+                  color: "#6b7280"
+                },
+                grid: { color: "rgba(15, 23, 42, 0.06)" }
+              }
+            }
+          }
+        });
+      } catch (error) {
+        container.innerHTML = `
+          <article class="research-card">
+            <div class="section-title">
+              <span>Midterm Study</span>
+              <span class="chip">Unavailable</span>
+            </div>
+            <div class="empty">
+              Chart failed to load<br>
+              <span class="mono" style="font-size:11px;color:#9eb0c9">${error.message}</span>
+            </div>
+          </article>
+        `;
+      }
+    }
+
+    function renderNotes() {
+      document.getElementById("tab-notes").innerHTML = `
+        <div class="notes-grid">
+          <article class="note">
+            <div class="note-title">Source resilience</div>
+            <p>Each API route is expected to try the upstream feed first, then return a numeric fallback with <span class="mono">stale=true</span> when the source degrades.</p>
+          </article>
+          <article class="note">
+            <div class="note-title">UI contract</div>
+            <p>The frontend never collapses into a blank dashboard. It keeps per-indicator status labels, cached values, and source hints visible so operators can trust what they are seeing.</p>
+          </article>
+          <article class="note">
+            <div class="note-title">Design intent</div>
+            <p>This version pushes stronger hierarchy, better mobile spacing, keyboard-accessible tabs, reduced duplicate rendering, and a more premium terminal-meets-control-room visual direction.</p>
+          </article>
+        </div>
+      `;
+    }
+
+    function renderAll() {
+      renderStatus();
+      renderDashboard();
+      renderHistory();
+      renderNotes();
+      if (state.tab === "charts") renderCharts();
+    }
+
+    bindTabs();
+    renderAll();
+    fetchAll();
+    setInterval(fetchAll, 300000);
+  </script>
+</body>
+</html>
